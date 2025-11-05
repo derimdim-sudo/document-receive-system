@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ระบบรับหนังสือเสนอผู้อำนวยการ</title>
+  <style>
+    body {
+      font-family: "Prompt", sans-serif;
+      background: #f8f9fa;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background: #0d6efd;
+      color: white;
+      text-align: center;
+      padding: 1rem;
+      font-size: 1.5rem;
+    }
+    main {
+      max-width: 900px;
+      margin: 2rem auto;
+      background: white;
+      padding: 2rem;
+      border-radius: 1rem;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+    input, select, textarea {
+      width: 100%;
+      padding: 0.6rem;
+      margin-top: 0.3rem;
+      border: 1px solid #ccc;
+      border-radius: 0.5rem;
+    }
+    button {
+      background: #0d6efd;
+      color: white;
+      border: none;
+      padding: 0.8rem 1.5rem;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      margin-top: 1rem;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 2rem;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 0.6rem;
+      text-align: left;
+    }
+    th {
+      background: #e9ecef;
+    }
+  </style>
+</head>
+<body>
+  <header>📑 ระบบรับหนังสือเสนอผู้อำนวยการ</header>
+  <main>
+    <form id="docForm">
+      <label>วันที่รับ:</label>
+      <input type="date" id="date">
+
+      <label>เวลา:</label>
+      <input type="time" id="time">
+
+      <label>เรื่อง:</label>
+      <input type="text" id="subject" placeholder="เช่น หนังสือขออนุมัติจัดกิจกรรม...">
+
+      <label>ระดับความด่วน:</label>
+      <select id="urgency">
+        <option>ปกติ</option>
+        <option>ด่วน</option>
+        <option>ด่วนมาก</option>
+        <option>ด่วนที่สุด</option>
+      </select>
+
+      <label>ผู้เสนอ:</label>
+      <input type="text" id="from" placeholder="ชื่อ-ตำแหน่งผู้เสนอ">
+
+      <label>หมายเหตุ:</label>
+      <textarea id="note" rows="3" placeholder="ระบุเพิ่มเติม (ถ้ามี)"></textarea>
+
+      <button type="button" onclick="addRecord()">บันทึกข้อมูล</button>
+    </form>
+
+    <table id="docTable">
+      <thead>
+        <tr>
+          <th>วันที่รับ</th>
+          <th>เวลา</th>
+          <th>เรื่อง</th>
+          <th>ความด่วน</th>
+          <th>ผู้เสนอ</th>
+          <th>หมายเหตุ</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </main>
+
+  <script>
+    function addRecord() {
+      const date = document.getElementById("date").value;
+      const time = document.getElementById("time").value;
+      const subject = document.getElementById("subject").value;
+      const urgency = document.getElementById("urgency").value;
+      const from = document.getElementById("from").value;
+      const note = document.getElementById("note").value;
+
+      if (!date || !time || !subject || !from) {
+        alert("กรุณากรอกข้อมูลให้ครบถ้วน");
+        return;
+      }
+
+      const table = document.querySelector("#docTable tbody");
+      const row = table.insertRow();
+      row.innerHTML = `
+        <td>${date}</td>
+        <td>${time}</td>
+        <td>${subject}</td>
+        <td>${urgency}</td>
+        <td>${from}</td>
+        <td>${note}</td>
+      `;
+
+      document.getElementById("docForm").reset();
+    }
+  </script>
+</body>
+</html>
