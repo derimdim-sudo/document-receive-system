@@ -5,13 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>ระบบรับหนังสือเสนอผู้อำนวยการ – Version 3</title>
 
+<!-- ✅ FONT -->
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet" />
+
 <style>
   body {
     font-family: "Prompt", sans-serif;
     background: #e9f2ff;
     margin: 0;
   }
-
   header {
     background: #0d6efd;
     color: #fff;
@@ -20,7 +22,6 @@
     font-weight: 600;
     text-align: center;
   }
-
   main {
     max-width: 1100px;
     background: #fff;
@@ -29,19 +30,16 @@
     border-radius: 14px;
     box-shadow: 0 6px 20px rgba(0,0,0,0.08);
   }
-
   .row {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 15px;
   }
-
   label {
     font-size: 14px;
     color: #003366;
     font-weight: 500;
   }
-
   input, select {
     width: 100%;
     padding: 10px;
@@ -51,12 +49,10 @@
     background: #fff;
     transition: 0.2s;
   }
-
   input:focus, select:focus {
     border-color: #0d6efd;
     box-shadow: 0 0 5px rgba(13,110,253,0.3);
   }
-
   button {
     padding: 10px;
     background: #0d6efd;
@@ -66,36 +62,29 @@
     font-size: 15px;
     cursor: pointer;
   }
-
   button:hover { background: #0a58ca; }
-
   table {
     width: 100%;
     border-collapse: collapse;
     margin-top: 18px;
   }
-
   th {
     background: #e5f1ff;
     padding: 9px;
     font-size: 14px;
   }
-
   td {
     padding: 8px;
     font-size: 14px;
     border-bottom: 1px solid #e7e7e7;
   }
-
   tr:nth-child(even) { background: #f8fbff; }
-
   .filter-row {
     display: grid;
     grid-template-columns: repeat(5,1fr);
     gap: 8px;
     margin: 16px 0;
   }
-
   #dashboard {
     background: #f1f8ff;
     padding: 14px;
@@ -171,15 +160,8 @@
 
   </form>
 
-  <!-- Search -->
-  <input
-    type="text"
-    id="searchBox"
-    placeholder="🔎 ค้นหา (เลขรับ / เรื่อง / ผู้เสนอ)"
-    style="width:100%;margin-top:18px"
-  />
+  <input type="text" id="searchBox" placeholder="🔎 ค้นหา (เลขรับ / เรื่อง / ผู้เสนอ)" style="width:100%;margin-top:18px"/>
 
-  <!-- Filter -->
   <div class="filter-row">
     <button id="filterAll">ทั้งหมด</button>
     <button id="filterWait">รอเสนอ</button>
@@ -188,7 +170,6 @@
     <button id="filterReturn">ส่งคืนแก้ไข</button>
   </div>
 
-  <!-- Table -->
   <table id="docTable">
     <thead>
       <tr>
@@ -210,7 +191,6 @@
 
   <button id="exportBtn" style="margin-top:16px">📤 Export Excel</button>
 
-  <!-- Dashboard -->
   <div id="dashboard">
     <h3>Dashboard (รายวัน / รายเดือน)</h3>
     <p id="dailyCount">รายวัน: -</p>
@@ -219,11 +199,8 @@
 
 </main>
 
-
-<!-- ✅ JS-Firebase -->
 <script type="module">
-
-/* ===== 1) Firebase Config ===== */
+/* ✅ Firebase Config */
 const firebaseConfig = {
   apiKey: "AIzaSyAdJmcdoa3S0Aug_vqy56xiSowsu0xoNt4",
   authDomain: "document-receive-system-966b5.firebaseapp.com",
@@ -233,8 +210,7 @@ const firebaseConfig = {
   appId: "1:276323697273:web:56fc212d209ed5547b8aa8"
 };
 
-
-/* ===== 2) IMPORT FIREBASE ===== */
+/* ✅ Firebase Import */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
 import {
   getFirestore, collection, addDoc, serverTimestamp,
@@ -244,14 +220,12 @@ import {
 
 import * as XLSX from "https://cdn.sheetjs.com/xlsx-latest/package/xlsx.mjs";
 
-
-/* ===== 3) INIT ===== */
+/* ✅ Init */
 const app = initializeApp(firebaseConfig);
 const db  = getFirestore(app);
 const docsCol = collection(db, "incoming_docs");
 
-
-/* ===== 4) DOM ===== */
+/* DOM */
 const tbody = document.querySelector("#docTable tbody");
 const btnSave = document.getElementById("saveBtn");
 const searchBox = document.getElementById("searchBox");
@@ -259,11 +233,11 @@ const exportBtn = document.getElementById("exportBtn");
 const dailyEl   = document.getElementById("dailyCount");
 const monthlyEl = document.getElementById("monthlyCount");
 
-
-/* ===== Utility ===== */
+/* Format Date */
 const fmtDateTimeTH = (d) =>
   new Intl.DateTimeFormat("th-TH", { dateStyle:"short", timeStyle:"short" }).format(d);
 
+/* Icons */
 const statusIcon = (s)=>{
   switch(s){
     case "รอเสนอ": return "🟡";
@@ -274,8 +248,7 @@ const statusIcon = (s)=>{
   }
 };
 
-
-/* ===== 5) RUNNING NUMBER ===== */
+/* ✅ Running Number */
 async function generateRefNo(){
   const yearTH = new Date().getFullYear()+543;
   const qLast = query(docsCol, orderBy("refno","desc"), limit(1));
@@ -292,10 +265,8 @@ async function generateRefNo(){
   return String(next).padStart(3,"0")+"/"+yearTH;
 }
 
-
-/* ===== 6) SAVE ===== */
-btnSave.addEventListener("click", async () => {
-
+/* ✅ SAVE */
+btnSave.addEventListener("click", async()=>{
   const date    = document.getElementById("date").value;
   const time    = document.getElementById("time").value;
   const subject = document.getElementById("subject").value.trim();
@@ -310,7 +281,7 @@ btnSave.addEventListener("click", async () => {
   }
 
   try{
-    const refno= await generateRefNo();
+    const refno = await generateRefNo();
     await addDoc(docsCol,{
       refno, date, time, subject, urgency, secret, from, note,
       status:"รอเสนอ",
