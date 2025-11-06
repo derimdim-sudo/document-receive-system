@@ -42,7 +42,7 @@
     font-weight: 500;
   }
 
-  input, select, textarea {
+  input, select {
     width: 100%;
     padding: 10px;
     border: 1px solid #cfd8e3;
@@ -52,39 +52,23 @@
     transition: 0.2s;
   }
 
-  input:focus, select:focus, textarea:focus {
+  input:focus, select:focus {
     border-color: #0d6efd;
     box-shadow: 0 0 5px rgba(13,110,253,0.3);
   }
 
   button {
-    width: 100%;
-    padding: 12px;
+    padding: 10px;
     background: #0d6efd;
     border: none;
     color: #fff;
     border-radius: 10px;
     font-size: 15px;
-    margin-top: 10px;
     cursor: pointer;
   }
 
   button:hover {
     background: #0a58ca;
-  }
-
-  /* Filter button quick-style */
-  .filter-row {
-    display: grid;
-    grid-template-columns: repeat(5,1fr);
-    gap: 8px;
-    margin: 16px 0;
-  }
-
-  .filter-row button {
-    background: #0d6efd;
-    font-size: 14px;
-    padding: 8px;
   }
 
   table {
@@ -97,7 +81,6 @@
     background: #e5f1ff;
     padding: 9px;
     font-size: 14px;
-    border-bottom: 2px solid #bcd2ff;
   }
 
   td {
@@ -106,21 +89,14 @@
     border-bottom: 1px solid #e7e7e7;
   }
 
-  tr:nth-child(even) {
-    background: #f8fbff;
-  }
+  tr:nth-child(even) { background: #f8fbff; }
 
-  .status-pill {
-    padding: 5px 10px;
-    border-radius: 20px;
-    font-weight: 600;
-    font-size: 13px;
-    display: inline-block;
+  .filter-row {
+    display: grid;
+    grid-template-columns: repeat(5,1fr);
+    gap: 8px;
+    margin: 16px 0;
   }
-  .s-wait   { background: #ffecb3; color:#a67800 }
-  .s-sign   { background: #d4edda; color:#156a36 }
-  .s-pend   { background: #cfe2ff; color:#1859b8 }
-  .s-ret    { background: #ffe2e6; color:#b01228 }
 
   #dashboard {
     background: #f1f8ff;
@@ -136,27 +112,31 @@
 <header>📁 ระบบรับหนังสือเสนอผู้อำนวยการ — Version 3</header>
 
 <main>
+
   <h3>บันทึกข้อมูล</h3>
 
   <form id="docForm">
+
     <div class="row">
       <div>
         <label>เลขรับ</label>
-        <input id="refno" placeholder="จะสร้างอัตโนมัติ" disabled>
+        <input id="refno" placeholder="จะสร้างอัตโนมัติ" disabled />
       </div>
+
       <div>
         <label>วันที่รับ</label>
-        <input type="date" id="date"/>
+        <input type="date" id="date" />
       </div>
     </div>
 
     <div class="row">
       <div>
         <label>เวลา</label>
-        <input type="time" id="time"/>
+        <input type="time" id="time" />
       </div>
+
       <div>
-        <label>ระดับความด่วน</label>
+        <label>ความด่วน</label>
         <select id="urgency">
           <option value="ปกติ">ปกติ</option>
           <option value="ด่วน">ด่วน</option>
@@ -169,31 +149,39 @@
     <div class="row">
       <div>
         <label>ผู้เสนอ</label>
-        <input type="text" id="from"/>
+        <input type="text" id="from" />
       </div>
+
       <div>
         <label>ชั้นความลับ</label>
         <select id="secret">
-          <option value="ลับ">ลับ</option>
-          <option value="ลับมาก">ลับมาก</option>
-          <option value="ลับที่สุด">ลับที่สุด</option>
+          <option value="ไม่มี">🔒 ไม่มี</option>
+          <option value="ลับ">🔒 ลับ</option>
+          <option value="ลับมาก">🔒🔒 ลับมาก</option>
+          <option value="ลับที่สุด">🔒🔒🔒 ลับที่สุด</option>
         </select>
       </div>
     </div>
 
     <label>เรื่อง</label>
-    <input type="text" id="subject"/>
+    <input type="text" id="subject" />
 
     <label>หมายเหตุ</label>
-    <input type="text" id="note"/>
+    <input type="text" id="note" />
 
     <button type="button" id="saveBtn">💾 บันทึกข้อมูล</button>
+
   </form>
 
-  <!-- ค้นหา -->
-  <input type="text" id="searchBox" placeholder="🔎 ค้นหา (เลขรับ / เรื่อง / ผู้เสนอ)" style="margin-top:18px"/>
+  <!-- Search -->
+  <input
+    type="text"
+    id="searchBox"
+    placeholder="🔎 ค้นหา (เลขรับ / เรื่อง / ผู้เสนอ)"
+    style="width:100%;margin-top:18px"
+  />
 
-  <!-- Filter Status -->
+  <!-- Filter -->
   <div class="filter-row">
     <button id="filterAll">ทั้งหมด</button>
     <button id="filterWait">รอเสนอ</button>
@@ -222,8 +210,9 @@
     <tbody></tbody>
   </table>
 
-  <button id="exportBtn">📤 Export Excel</button>
+  <button id="exportBtn" style="margin-top:16px">📤 Export Excel</button>
 
+  <!-- Dashboard -->
   <div id="dashboard">
     <h3>Dashboard (รายวัน / รายเดือน)</h3>
     <p id="dailyCount">รายวัน: -</p>
@@ -232,10 +221,227 @@
 
 </main>
 
-<!-- ✅ Firebase & JS ลงท้าย -->
-<script type="module">
-/* ✅ ... โค้ด Firebase + Logic (เหมือนเวอร์ชันก่อน) ... */
-</script>
 
-</body>
-</html>
+<!-- ✅ JS-Firebase (ต่อ) -->
+<script type="module">
+
+/* ===== 1) ใส่ Firebase Config ของคุณ ===== */
+const firebaseConfig = {
+  apiKey: "PASTE_API_KEY_HERE",
+  authDomain: "PASTE_AUTH_DOMAIN_HERE",
+  projectId: "PASTE_PROJECT_ID_HERE",
+  storageBucket: "PASTE_STORAGE_BUCKET_HERE",
+  appId: "PASTE_APP_ID_HERE",
+};
+
+
+/* ===== 2) IMPORT FIREBASE ===== */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
+import {
+  getFirestore, collection, addDoc, serverTimestamp,
+  query, orderBy, onSnapshot, updateDoc, doc,
+  getDocs, where, Timestamp, limit
+} from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+
+import * as XLSX from "https://cdn.sheetjs.com/xlsx-latest/package/xlsx.mjs";
+
+
+/* ===== 3) INIT ===== */
+const app = initializeApp(firebaseConfig);
+const db  = getFirestore(app);
+const docsCol = collection(db, "incoming_docs");
+
+
+/* ===== 4) DOM ===== */
+const tbody = document.querySelector("#docTable tbody");
+const btnSave = document.getElementById("saveBtn");
+const searchBox = document.getElementById("searchBox");
+const exportBtn = document.getElementById("exportBtn");
+const dailyEl   = document.getElementById("dailyCount");
+const monthlyEl = document.getElementById("monthlyCount");
+
+
+/* ===== Utility ===== */
+const fmtDateTimeTH = (d) =>
+  new Intl.DateTimeFormat("th-TH", { dateStyle:"short", timeStyle:"short" }).format(d);
+
+const statusIcon = (s)=>{
+  switch(s){
+    case "รอเสนอ": return "🟡";
+    case "รอเซ็น": return "🔵";
+    case "เซ็นแล้ว": return "🟢";
+    case "ส่งคืนแก้ไข": return "🔴";
+    default: return "⚪";
+  }
+};
+
+
+/* ===== 5) RUNNING NUMBER ===== */
+async function generateRefNo(){
+  const yearTH = new Date().getFullYear()+543;
+  const qLast = query(docsCol, orderBy("refno","desc"), limit(1));
+  const snap = await getDocs(qLast);
+  let next=1;
+
+  if(!snap.empty){
+    const last = snap.docs[0].data().refno || "";
+    const [seq,y]= last.split("/");
+    if(parseInt(y)===yearTH){
+      next = (parseInt(seq)||0)+1;
+    }
+  }
+  return String(next).padStart(3,"0")+"/"+yearTH;
+}
+
+
+/* ===== 6) SAVE ===== */
+btnSave.addEventListener("click", async()=>{
+  const date    = document.getElementById("date").value;
+  const time    = document.getElementById("time").value;
+  const subject = document.getElementById("subject").value.trim();
+  const urgency = document.getElementById("urgency").value;
+  const secret  = document.getElementById("secret").value;
+  const from    = document.getElementById("from").value.trim();
+  const note    = document.getElementById("note").value.trim();
+
+  if(!date || !time || !subject || !from){
+    alert("กรุณากรอก วันที่/เวลา/เรื่อง/ผู้เสนอ");
+    return;
+  }
+
+  try{
+    const refno= await generateRefNo();
+    await addDoc(docsCol,{
+      refno, date, time, subject, urgency, secret, from, note,
+      status:"รอเสนอ",
+      createdAt: serverTimestamp(),
+    });
+    alert("✅ บันทึกสำเร็จ");
+  }catch(e){
+    console.error(e);
+    alert("❌ บันทึกไม่สำเร็จ");
+  }
+});
+
+
+/* ===== 7) TABLE + FILTER + SEARCH ===== */
+let cacheDocs=[];
+let currentFilter="ทั้งหมด";
+
+function renderTable(){
+  const kw = (searchBox.value||"").toLowerCase();
+
+  const filtered = cacheDocs
+    .filter(({data}) => currentFilter==="ทั้งหมด" || data.status===currentFilter)
+    .filter(({data})=>{
+      if(!kw) return true;
+      return (
+        (data.refno||"").toLowerCase().includes(kw) ||
+        (data.subject||"").toLowerCase().includes(kw) ||
+        (data.from||"").toLowerCase().includes(kw)
+      );
+    });
+
+  tbody.innerHTML="";
+
+  filtered.forEach(({id,data,createdText})=>{
+    const tr=document.createElement("tr");
+    tr.innerHTML=`
+      <td>${data.refno||"-"}</td>
+      <td>${data.date||"-"}</td>
+      <td>${data.time||"-"}</td>
+      <td>${data.subject||"-"}</td>
+      <td>${data.urgency||"-"}</td>
+      <td>${data.secret||"-"}</td>
+      <td>${data.from||"-"}</td>
+      <td>${data.note||"-"}</td>
+      <td>${statusIcon(data.status)} ${data.status}</td>
+      <td>${createdText}</td>
+      <td>
+        <button onclick="updateStatus('${id}','รอเซ็น')">รอเซ็น</button>
+        <button onclick="updateStatus('${id}','เซ็นแล้ว')">เซ็นแล้ว</button>
+        <button onclick="updateStatus('${id}','ส่งคืนแก้ไข')">ส่งคืนแก้ไข</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+searchBox.addEventListener("input",renderTable);
+
+document.getElementById("filterAll").onclick     = ()=>{ currentFilter="ทั้งหมด"; renderTable(); };
+document.getElementById("filterWait").onclick     = ()=>{ currentFilter="รอเสนอ"; renderTable(); };
+document.getElementById("filterPending").onclick  = ()=>{ currentFilter="รอเซ็น"; renderTable(); };
+document.getElementById("filterSigned").onclick   = ()=>{ currentFilter="เซ็นแล้ว"; renderTable(); };
+document.getElementById("filterReturn").onclick   = ()=>{ currentFilter="ส่งคืนแก้ไข"; renderTable(); };
+
+
+/* ===== 8) LOAD REALTIME ===== */
+const qList = query(docsCol, orderBy("createdAt","desc"));
+onSnapshot(qList ,(snap)=>{
+  cacheDocs=[];
+  snap.forEach((ds)=>{
+    const d=ds.data();
+    const created = d.createdAt?.toDate?.();
+    cacheDocs.push({
+      id:ds.id,
+      data:d,
+      createdText: created? fmtDateTimeTH(created):"-"
+    });
+  });
+  renderTable();
+});
+
+
+/* ===== 9) UPDATE STATUS ===== */
+async function _updateStatus(id,newStatus){
+  try{
+    await updateDoc(doc(db,"incoming_docs",id),{
+      status:newStatus
+    });
+    updateDashboard();
+  }catch(e){
+    console.error(e);
+    alert("❌ อัปเดตไม่สำเร็จ");
+  }
+}
+window.updateStatus=_updateStatus;
+
+
+/* ===== 10) EXPORT EXCEL ===== */
+exportBtn.addEventListener("click",async()=>{
+  const snap = await getDocs(qList);
+  const rows=[];
+
+  snap.forEach((ds)=>{
+    const d=ds.data();
+    const created = d.createdAt?.toDate?.();
+    rows.push({
+      เลขรับ: d.refno,
+      วันที่รับ: d.date,
+      เวลา: d.time,
+      เรื่อง: d.subject,
+      ความด่วน: d.urgency,
+      ชั้นความลับ: d.secret,
+      ผู้เสนอ: d.from,
+      หมายเหตุ: d.note,
+      สถานะ: d.status,
+      บันทึกเมื่อ: created? fmtDateTimeTH(created):"-"
+    });
+  });
+
+  const ws = XLSX.utils.json_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,"Docs");
+
+  XLSX.writeFile(wb,"incoming-docs.xlsx");
+});
+
+
+/* ===== 11) DASHBOARD ===== */
+async function updateDashboard(){
+  const now=new Date();
+  const startDay = new Date(now.getFullYear(),now.getMonth(),now.getDate());
+  const startMonth = new Date(now.getFullYear(),now.getMonth(),1);
+
+  const qDay = query(docsCol, where("createdAt", ">=", Timestamp.fromDate(startDay))
