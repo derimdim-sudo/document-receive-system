@@ -1,270 +1,257 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>ระบบรับหนังสือเสนอผู้อำนวยการ — V2</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ระบบรับหนังสือเสนอผู้บริหาร</title>
+
   <style>
-    body{font-family:"Prompt",system-ui,-apple-system,Segoe UI,Roboto; background:#f6f7f9; margin:0}
-    header{background:#0d6efd;color:#fff;padding:14px 18px;font-size:18px}
-    main{max-width:1100px;margin:20px auto;background:#fff;padding:22px;border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,.06)}
-    .row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-    label{font-size:14px;color:#333}
-    input,select,textarea,button{width:100%;padding:10px;border:1px solid #dcdfe4;border-radius:10px;font-size:14px}
-    button{background:#0d6efd;color:#fff;border:none;cursor:pointer}
-    button:hover{opacity:.95}
-    table{width:100%;border-collapse:collapse;margin-top:18px}
-    th,td{border:1px solid #e9ecef;padding:10px;text-align:left;font-size:14px;vertical-align:top}
-    th{background:#f3f4f6}
-    .pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px}
-    .pill.wait{background:#e7f0ff;color:#0d6efd}
-    .pill.pending{background:#fff7e0;color:#b58100}
-    .pill.signed{background:#e8f5e9;color:#198754}
-    .pill.return{background:#fdecea;color:#dc3545}
-    .toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+    body {
+      font-family: "Prompt", sans-serif;
+      background: #f8f9fa;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background: #0d6efd;
+      color: white;
+      padding: 1rem;
+      text-align: center;
+      font-size: 1.5rem;
+    }
+    main {
+      max-width: 1200px;
+      margin: auto;
+      padding: 1rem;
+    }
+    .row {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1rem;
+    }
+    label{
+      font-size:14px;
+      font-weight:600;
+    }
+    input,select,textarea{
+      width:100%;
+      padding:8px;
+      font-size:14px;
+      border:1px solid #ddd;
+      border-radius:6px;
+    }
+    button{
+      background:#0d6efd;
+      color:white;
+      border:none;
+      padding:10px 18px;
+      border-radius:6px;
+      font-size:15px;
+      cursor:pointer;
+    }
+    button:hover{opacity:0.9;}
+    table {
+      width:100%;
+      border-collapse: collapse;
+      margin-top:1rem;
+      background:white;
+    }
+    th,td{
+      border:1px solid #ddd;
+      padding:10px;
+      text-align:left;
+      font-size:14px;
+    }
+    th{
+      background:#f3f4f6;
+    }
+    .pill{
+      display:inline-block;
+      padding:2px 8px;
+      border-radius:999px;
+      font-size:12px;
+    }
+    .pill-wait{background:#e7f0ff;color:#0d6efd;}
+    .pill-sign{background:#fff5e1;color:#b46900;}
+    .pill-done{background:#e5ffe7;color:#008f12;}
+    .pill-edit{background:#ffecec;color:#d00000;}
+
+    .filter-bar{
+      display:flex;
+      gap:1rem;
+      margin-top:1rem;
+      flex-wrap:wrap;
+    }
+
+    .dash-box{
+      display:inline-block;
+      padding:12px 16px;
+      border-radius:6px;
+      background:white;
+      border:2px solid #0d6efd;
+      margin:0 8px 12px 0;
+      font-weight:600;
+    }
   </style>
+
 </head>
 <body>
-  <header>📑 ระบบรับหนังสือเสนอผู้อำนวยการ — Version 2</header>
 
-  <main>
-    <!-- ฟอร์มลงรับ -->
-    <form id="docForm">
-      <div class="row">
-        <div>
-          <label>เลขรับ</label>
-          <input type="text" id="refno" placeholder="เช่น 001/2568" readonly />
-        </div>
-        <div>
-          <label>ระดับความด่วน</label>
-          <select id="urgency">
-            <option>ปกติ</option>
-            <option>ด่วน</option>
-            <option>ด่วนมาก</option>
-            <option>ด่วนที่สุด</option>
-          </select>
-        </div>
-      </div>
+<header>ระบบรับหนังสือเสนอผู้บริหาร - V3</header>
 
-      <div class="row">
-        <div>
-          <label>วันที่รับ</label>
-          <input type="date" id="date" />
-        </div>
-        <div>
-          <label>เวลา</label>
-          <input type="time" id="time" />
-        </div>
-      </div>
+<main>
 
-      <div class="row">
-        <div>
-          <label>เรื่อง</label>
-          <input type="text" id="subject" placeholder="เช่น ขออนุมัติ..." />
-        </div>
-        <div>
-          <label>ผู้เสนอ/หน่วยงาน</label>
-          <input type="text" id="from" placeholder="เช่น ส่วนทัณฑปฏิบัติ / น.ส.วิภา" />
-        </div>
-      </div>
+  <!-- DASHBOARD -->
+  <div>
+    <div class="dash-box" id="dailyCount">รายวัน: - เรื่อง</div>
+    <div class="dash-box" id="monthlyCount">รายเดือน: - เรื่อง</div>
+  </div>
 
-      <div class="row">
-        <div>
-          <label>หมายเหตุ</label>
-          <input type="text" id="note" placeholder="เพิ่มเติม (ถ้ามี)"/>
-        </div>
-        <div>
-          <label>&nbsp;</label>
-          <button type="button" id="saveBtn">บันทึกข้อมูล</button>
-        </div>
-      </div>
-    </form>
-
-    <!-- ช่องค้นหา -->
-    <div style="margin-top:16px">
-      <input type="text" id="searchBox" placeholder="ค้นหา: เลขรับ / เรื่อง / ผู้เสนอ" style="width:100%;padding:10px;border:1px solid #dcdfe4;border-radius:10px;font-size:14px" />
+  <!-- FORM -->
+  <h3>บันทึกรับหนังสือ</h3>
+  <div class="row">
+    <div>
+      <label>วันที่รับ</label>
+      <input type="date" id="date">
     </div>
-
-    <!-- ตาราง -->
-    <table id="docTable">
-      <thead>
-        <tr>
-          <th style="width:110px">เลขรับ</th>
-          <th style="width:110px">วันที่รับ</th>
-          <th style="width:90px">เวลา</th>
-          <th>เรื่อง</th>
-          <th style="width:160px">ผู้เสนอ</th>
-          <th style="width:100px">ความด่วน</th>
-          <th style="width:130px">สถานะ</th>
-          <th style="width:220px">ดำเนินการ</th>
-          <th style="width:160px">บันทึกเมื่อ</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-
-    <!-- ปุ่มกรองสถานะ -->
-    <div class="toolbar">
-      <button id="filterAll">ทั้งหมด</button>
-      <button id="filterWait">รอเสนอ</button>
-      <button id="filterPending">รอเซ็น</button>
-      <button id="filterSigned">เซ็นแล้ว</button>
-      <button id="filterReturn">ส่งคืนแก้ไข</button>
-      <button id="exportBtn" style="margin-left:auto">Export Excel</button>
+    <div>
+      <label>เวลา</label>
+      <input type="time" id="time">
     </div>
-
-    <!-- Dashboard -->
-    <div id="dashboard" style="margin-top:20px">
-      <h3>Dashboard (รายวัน/รายเดือน)</h3>
-      <p id="dailyCount">รายวัน: -</p>
-      <p id="monthlyCount">รายเดือน: -</p>
+    <div>
+      <label>เรื่อง</label>
+      <input type="text" id="subject" placeholder="เรื่อง">
     </div>
-  </main>
+    <div>
+      <label>ความเร่งด่วน</label>
+      <select id="urgency">
+        <option value="ปกติ">ปกติ</option>
+        <option value="ด่วน">ด่วน</option>
+      </select>
+    </div>
+    <div>
+      <label>ผู้เสนอ</label>
+      <input type="text" id="from">
+    </div>
+    <div>
+      <label>หมายเหตุ</label>
+      <input type="text" id="note">
+    </div>
+  </div>
 
+  <button id="saveBtn" style="margin-top:1rem;">💾 บันทึก</button>
+
+  <!-- FILTER + SEARCH -->
+  <div class="filter-bar">
+    <select id="filterStatus">
+      <option value="">สถานะทั้งหมด</option>
+      <option value="รอเสนอ">รอเสนอ</option>
+      <option value="รอเซ็น">รอเซ็น</option>
+      <option value="เซ็นแล้ว">เซ็นแล้ว</option>
+      <option value="ส่งคืนแก้ไข">ส่งคืนแก้ไข</option>
+    </select>
+
+    <input type="text" id="searchInput" placeholder="ค้นหา เรื่อง / ผู้เสนอ / เลขรับ">
+
+    <button id="exportBtn">📁 Export Excel</button>
+  </div>
+
+  <!-- TABLE -->
+  <table id="docTable">
+    <thead>
+      <tr>
+        <th>เลขรับ</th>
+        <th>วันที่รับ</th>
+        <th>เวลา</th>
+        <th>เรื่อง</th>
+        <th>ความด่วน</th>
+        <th>ผู้เสนอ</th>
+        <th>หมายเหตุ</th>
+        <th>สถานะ</th>
+        <th>ดำเนินการ</th>
+        <th>บันทึกเมื่อ</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+  <!-- ========================= -->
+  <!-- Part 2: Firebase + Logic  -->
+  <!-- ========================= -->
   <script type="module">
-    /* ======== 1) ตั้งค่า Firebase (แทนค่าด้านล่างด้วยของจริงจาก Firebase Console) ======== */
+    /* 1) Firebase Config (แทนค่าตามของดรีม) */
     const firebaseConfig = {
-     apiKey: "PASTE_API_KEY_HERE",
-     authDomain: "PASTE_AUTH_DOMAIN_HERE",
-     projectId: "PASTE_PROJECT_ID_HERE",
-     storageBucket: "PASTE_STORAGE_BUCKET_HERE",
-     appId: "PASTE_APP_ID_HERE",
-};
+      apiKey: "PASTE_API_KEY_HERE",
+      authDomain: "PASTE_AUTH_DOMAIN_HERE",
+      projectId: "PASTE_PROJECT_ID_HERE",
+      storageBucket: "PASTE_STORAGE_BUCKET_HERE",
+      appId: "PASTE_APP_ID_HERE",
+    };
 
-
-    /* ======== SDK Imports ======== */
+    /* 2) SDK Imports */
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
     import {
       getFirestore, collection, addDoc, serverTimestamp,
       query, orderBy, onSnapshot, updateDoc, doc,
       getDocs, where, Timestamp, limit
     } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
-    // SheetJS สำหรับ Export Excel
     import * as XLSX from "https://cdn.sheetjs.com/xlsx-latest/package/xlsx.mjs";
 
-    /* ======== 2) เริ่มต้น Firebase/Firestore ======== */
+    /* 3) Init */
     const app = initializeApp(firebaseConfig);
     const db  = getFirestore(app);
     const docsCol = collection(db, "incoming_docs");
 
-    /* ======== 3) เลขรับรันกลาง (กันชน) ======== */
-    async function generateRefNo() {
-      const year = new Date().getFullYear() + 543;
-      // อ่านรายการล่าสุด (ตาม refno ที่ padding แล้ว)
-      const qLast = query(docsCol, orderBy("refno", "desc"), limit(1));
-      const snapLast = await getDocs(qLast);
-      let nextSeq = 1;
-      if (!snapLast.empty) {
-        const last = snapLast.docs[0].data().refno || "";
-        const [seqStr, y] = last.split("/");
-        if (parseInt(y) === year) nextSeq = parseInt(seqStr) + 1;
-      }
-      const seq = String(nextSeq).padStart(3, "0");
-      return `${seq}/${year}`;
-    }
+    /* 4) DOM Refs */
+    const tbody        = document.querySelector("#docTable tbody");
+    const btnSave      = document.getElementById("saveBtn");
+    const filterStatus = document.getElementById("filterStatus");
+    const searchInput  = document.getElementById("searchInput");
+    const dailyEl      = document.getElementById("dailyCount");
+    const monthlyEl    = document.getElementById("monthlyCount");
+    const exportBtn    = document.getElementById("exportBtn");
 
-    async function updateRefNoInput() {
-      try {
-        const ref = await generateRefNo();
-        const inp = document.getElementById("refno");
-        inp.value = ref;
-        inp.readOnly = true;
-      } catch (e) {
-        console.error(e);
-      }
-    }
+    /* 5) Utilities */
+    const fmtDateTimeTH = (d) =>
+      new Intl.DateTimeFormat("th-TH", { dateStyle: "short", timeStyle: "short" }).format(d);
 
-    /* ======== 4) ส่วน DOM & ตัวแปรกรอง/ค้นหา ======== */
-    const form  = document.getElementById("docForm");
-    const btn   = document.getElementById("saveBtn");
-    const tbody = document.querySelector("#docTable tbody");
-    let currentFilter = "ทั้งหมด";
-    let searchText = "";
-    let allDocs = []; // {id, data, createdText}
-
-    // เปลี่ยนสถานะเป็นป้ายสี
-    function statusPill(text){
+    const statusPill = (s) => {
       const map = {
-        "รอเสนอ":"pill pending",
-        "รอเซ็น":"pill wait",
-        "เซ็นแล้ว":"pill signed",
-        "ส่งคืนแก้ไข":"pill return"
+        "รอเสนอ": "pill pill-sign",
+        "รอเซ็น": "pill pill-wait",
+        "เซ็นแล้ว": "pill pill-done",
+        "ส่งคืนแก้ไข": "pill pill-edit",
       };
-      return `<span class="${map[text]||'pill'}">${text||'-'}</span>`;
-    }
+      return `<span class="${map[s] || "pill"}">${s || "-"}</span>`;
+    };
 
-    function colorStatusIcon(s){
-      switch(s){
+    const statusIcon = (s) => {
+      switch (s) {
         case "รอเสนอ": return "🟡";
         case "รอเซ็น": return "🔵";
         case "เซ็นแล้ว": return "🟢";
         case "ส่งคืนแก้ไข": return "🔴";
         default: return "⚪";
       }
-    }
-
-    // ฟังก์ชันแสดงผลหลังกรอง+ค้นหา
-    function renderRows(){
-      tbody.innerHTML = "";
-      const kw = searchText.toLowerCase();
-
-      allDocs
-        .filter(({data}) => currentFilter === "ทั้งหมด" || data.status === currentFilter)
-        .filter(({data}) => {
-          if (!kw) return true;
-          const refno = (data.refno||"").toLowerCase();
-          const subject = (data.subject||"").toLowerCase();
-          const from = (data.from||"").toLowerCase();
-          return refno.includes(kw) || subject.includes(kw) || from.includes(kw);
-        })
-        .forEach(({id, data, createdText}) => {
-          const tr = document.createElement("tr");
-          tr.innerHTML = `
-            <td>${data.refno || "-"}</td>
-            <td>${data.date || "-"}</td>
-            <td>${data.time || "-"}</td>
-            <td>${data.subject || "-"}</td>
-            <td>${data.from || "-"}</td>
-            <td>${data.urgency || "-"}</td>
-            <td>${colorStatusIcon(data.status)} ${statusPill(data.status)}</td>
-            <td>
-              <button onclick="updateStatus('${id}', 'รอเซ็น')">รอเซ็น</button>
-              <button onclick="updateStatus('${id}', 'เซ็นแล้ว')">เซ็นแล้ว</button>
-              <button onclick="updateStatus('${id}', 'ส่งคืนแก้ไข')">ส่งคืนแก้ไข</button>
-            </td>
-            <td>${createdText}</td>`;
-          tbody.appendChild(tr);
-        });
-    }
-
-    // ทำให้ updateStatus เรียกได้จากปุ่ม (attach บน window)
-    window.updateStatus = async (id, newStatus) => {
-      try {
-        await updateDoc(doc(db, "incoming_docs", id), { status: newStatus });
-        // update dashboard เล็กน้อยหลังเปลี่ยนสถานะ
-        updateDashboard();
-      } catch (err) {
-        console.error(err);
-        alert("อัปเดตไม่สำเร็จ");
-      }
     };
 
-    // ปุ่มตัวกรองสถานะ
-    document.getElementById("filterAll").onclick     = ()=>{ currentFilter="ทั้งหมด"; renderRows(); };
-    document.getElementById("filterWait").onclick     = ()=>{ currentFilter="รอเสนอ"; renderRows(); };
-    document.getElementById("filterPending").onclick  = ()=>{ currentFilter="รอเซ็น"; renderRows(); };
-    document.getElementById("filterSigned").onclick   = ()=>{ currentFilter="เซ็นแล้ว"; renderRows(); };
-    document.getElementById("filterReturn").onclick   = ()=>{ currentFilter="ส่งคืนแก้ไข"; renderRows(); };
+    /* 6) เลขรับรันอัตโนมัติ (กลาง) */
+    async function generateRefNo() {
+      const yearTH = new Date().getFullYear() + 543;
+      // refno padding เป็น 3 หลัก เช่น 001/2568 → จึงสั่ง orderBy("refno","desc") ได้
+      const qLast = query(docsCol, orderBy("refno", "desc"), limit(1));
+      const snap  = await getDocs(qLast);
 
-    // ช่องค้นหา
-    document.getElementById("searchBox").addEventListener("input", (e)=>{
-      searchText = e.target.value.trim();
-      renderRows();
-    });
+      let next = 1;
+      if (!snap.empty) {
+        const last = snap.docs[0].data().refno || "";
+        const [seqStr, y] = last.split("/");
+        if (parseInt(y) === yearTH) next = (parseInt(seqStr) || 0) + 1;
+      }
+      return `${String(next).padStart(3, "0")}/${yearTH}`;
+    }
 
-    /* ======== 5) บันทึกข้อมูล ======== */
-    btn.addEventListener("click", async () => {
-      const refno   = document.getElementById("refno").value.trim();
+    /* 7) บันทึกข้อมูล */
+    btnSave.addEventListener("click", async () => {
       const date    = document.getElementById("date").value;
       const time    = document.getElementById("time").value;
       const subject = document.getElementById("subject").value.trim();
@@ -272,64 +259,120 @@
       const from    = document.getElementById("from").value.trim();
       const note    = document.getElementById("note").value.trim();
 
-      if (!refno) {
-        alert("ระบบกำลังสร้างเลขรับ ให้รอสักครู่แล้วบันทึกอีกครั้ง");
-        return;
-      }
       if (!date || !time || !subject || !from) {
-        alert("กรุณากรอก เลขรับ/วันที่/เวลา/เรื่อง/ผู้เสนอ ให้ครบ");
+        alert("กรุณากรอก วันที่/เวลา/เรื่อง/ผู้เสนอ ให้ครบ");
         return;
       }
+
       try {
+        const refno = await generateRefNo();
         await addDoc(docsCol, {
           refno, date, time, subject, urgency, from, note,
           status: "รอเสนอ",
-          createdAt: serverTimestamp()
+          createdAt: serverTimestamp(),
         });
-        form.reset();
-        await updateRefNoInput(); // เตรียมเลขรับถัดไป
+        // ล้างฟอร์ม
+        document.getElementById("date").value    = "";
+        document.getElementById("time").value    = "";
+        document.getElementById("subject").value = "";
+        document.getElementById("from").value    = "";
+        document.getElementById("note").value    = "";
+        document.getElementById("urgency").value = "ปกติ";
         alert("บันทึกสำเร็จ ✅");
         updateDashboard();
-      } catch (err) {
-        console.error(err);
+      } catch (e) {
+        console.error(e);
         alert("บันทึกไม่สำเร็จ โปรดลองอีกครั้ง");
       }
     });
 
-    /* ======== 6) โหลดรายการแบบเรียลไทม์ ======== */
+    /* 8) Render Table + Filter + Search */
+    let cacheDocs = []; // { id, data, createdText }
+
+    function renderTable() {
+      const kw = (searchInput.value || "").trim().toLowerCase();
+      const f  = (filterStatus.value || "").trim();
+
+      tbody.innerHTML = "";
+      cacheDocs
+        .filter(({ data }) => !f || data.status === f)
+        .filter(({ data }) => {
+          if (!kw) return true;
+          const refno   = (data.refno   || "").toLowerCase();
+          const subject = (data.subject || "").toLowerCase();
+          const from    = (data.from    || "").toLowerCase();
+          return refno.includes(kw) || subject.includes(kw) || from.includes(kw);
+        })
+        .forEach(({ id, data, createdText }) => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${data.refno || "-"}</td>
+            <td>${data.date || "-"}</td>
+            <td>${data.time || "-"}</td>
+            <td>${data.subject || "-"}</td>
+            <td>${data.urgency || "-"}</td>
+            <td>${data.from || "-"}</td>
+            <td>${data.note || "-"}</td>
+            <td>${statusIcon(data.status)} ${statusPill(data.status)}</td>
+            <td>
+              <button onclick="updateStatus('${id}','รอเซ็น')">รอเซ็น</button>
+              <button onclick="updateStatus('${id}','เซ็นแล้ว')">เซ็นแล้ว</button>
+              <button onclick="updateStatus('${id}','ส่งคืนแก้ไข')">ส่งคืนแก้ไข</button>
+            </td>
+            <td>${createdText}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+    }
+
+    filterStatus.addEventListener("change", renderTable);
+    searchInput.addEventListener("input", renderTable);
+
     const qList = query(docsCol, orderBy("createdAt", "desc"));
     onSnapshot(qList, (snap) => {
-      allDocs = [];
-      snap.forEach((docSnap) => {
-        const d = docSnap.data();
+      cacheDocs = [];
+      snap.forEach((ds) => {
+        const d = ds.data();
         const created = d.createdAt?.toDate?.() ? d.createdAt.toDate() : null;
-        const createdText = created
-          ? new Intl.DateTimeFormat("th-TH", { dateStyle: "short", timeStyle: "short" }).format(created)
-          : "-";
-        allDocs.push({ id: docSnap.id, data: d, createdText });
+        cacheDocs.push({
+          id: ds.id,
+          data: d,
+          createdText: created ? fmtDateTimeTH(created) : "-",
+        });
       });
-      renderRows();
+      renderTable();
     });
 
-    /* ======== 7) Export Excel ======== */
-    document.getElementById("exportBtn").addEventListener("click", async () => {
+    /* 9) Update สถานะ (ให้ปุ่มเรียกใช้ได้) */
+    async function _updateStatus(id, newStatus) {
       try {
-        const snapAll = await getDocs(qList);
+        await updateDoc(doc(db, "incoming_docs", id), { status: newStatus });
+        updateDashboard();
+      } catch (e) {
+        console.error(e);
+        alert("อัปเดตสถานะไม่สำเร็จ");
+      }
+    }
+    window.updateStatus = _updateStatus;
+
+    /* 10) Export Excel */
+    exportBtn.addEventListener("click", async () => {
+      try {
+        const snap = await getDocs(qList);
         const rows = [];
-        snapAll.forEach((docSnap) => {
-          const d = docSnap.data();
+        snap.forEach((ds) => {
+          const d = ds.data();
           const created = d.createdAt?.toDate?.()
-            ? new Intl.DateTimeFormat("th-TH", { dateStyle:"short", timeStyle:"short" }).format(d.createdAt.toDate())
-            : "-";
+            ? fmtDateTimeTH(d.createdAt.toDate()) : "-";
           rows.push({
             เลขรับ: d.refno || "-",
             วันที่รับ: d.date || "-",
             เวลา: d.time || "-",
             เรื่อง: d.subject || "-",
-            ผู้เสนอ: d.from || "-",
             ความด่วน: d.urgency || "-",
-            สถานะ: d.status || "-",
+            ผู้เสนอ: d.from || "-",
             หมายเหตุ: d.note || "-",
+            สถานะ: d.status || "-",
             บันทึกเมื่อ: created,
           });
         });
@@ -339,13 +382,13 @@
         const filename = `incoming-docs-${new Date().toISOString().slice(0,10)}.xlsx`;
         XLSX.writeFile(wb, filename);
         alert("✅ ดาวน์โหลดไฟล์ Excel สำเร็จ");
-      } catch (err) {
-        console.error(err);
+      } catch (e) {
+        console.error(e);
         alert("❌ Export ล้มเหลว");
       }
     });
 
-    /* ======== 8) Dashboard (รายวัน/รายเดือน) ======== */
+    /* 11) Dashboard (รายวัน/รายเดือน) */
     async function updateDashboard() {
       const now = new Date();
       const y = now.getFullYear(), m = now.getMonth();
@@ -358,15 +401,13 @@
       const daySnap   = await getDocs(qDay);
       const monthSnap = await getDocs(qMonth);
 
-      document.getElementById("dailyCount").textContent   = `รายวัน: ${daySnap.size} เรื่อง`;
-      document.getElementById("monthlyCount").textContent = `รายเดือน: ${monthSnap.size} เรื่อง`;
+      dailyEl.textContent   = `รายวัน: ${daySnap.size} เรื่อง`;
+      monthlyEl.textContent = `รายเดือน: ${monthSnap.size} เรื่อง`;
     }
-
-    // อัปเดต Dashboard เป็นระยะ + หลังโหลด
     setInterval(updateDashboard, 5000);
     updateDashboard();
-    // เตรียมเลขรับครั้งแรก
-    updateRefNoInput();
   </script>
+
+</main>
 </body>
 </html>
