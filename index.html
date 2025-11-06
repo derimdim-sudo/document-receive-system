@@ -220,7 +220,7 @@
 </main>
 
 
-<!-- ✅ JS-Firebase (ต่อ) -->
+<!-- ✅ JS-Firebase -->
 <script type="module">
 
 /* ===== 1) Firebase Config ===== */
@@ -228,7 +228,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyAdJmcdoa3S0Aug_vqy56xiSowsu0xoNt4",
   authDomain: "document-receive-system-966b5.firebaseapp.com",
   projectId: "document-receive-system-966b5",
-  storageBucket: "document-receive-system-966b5.appspot.com",   // ✅ FIXED
+  storageBucket: "document-receive-system-966b5.appspot.com",
   messagingSenderId: "276323697273",
   appId: "1:276323697273:web:56fc212d209ed5547b8aa8"
 };
@@ -294,7 +294,8 @@ async function generateRefNo(){
 
 
 /* ===== 6) SAVE ===== */
-btnSave.addEventListener("click", async()=>{}{
+btnSave.addEventListener("click", async () => {
+
   const date    = document.getElementById("date").value;
   const time    = document.getElementById("time").value;
   const subject = document.getElementById("subject").value.trim();
@@ -321,7 +322,6 @@ btnSave.addEventListener("click", async()=>{}{
     alert("❌ บันทึกไม่สำเร็จ");
   }
 });
-
 
 </script>
 
