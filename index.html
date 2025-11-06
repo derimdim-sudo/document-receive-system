@@ -67,9 +67,7 @@
     cursor: pointer;
   }
 
-  button:hover {
-    background: #0a58ca;
-  }
+  button:hover { background: #0a58ca; }
 
   table {
     width: 100%;
@@ -225,15 +223,16 @@
 <!-- ✅ JS-Firebase (ต่อ) -->
 <script type="module">
 
-/* ===== 1) ใส่ Firebase Config ของคุณ ===== */
+/* ===== 1) Firebase Config ===== */
 const firebaseConfig = {
   apiKey: "AIzaSyAdJmcdoa3S0Aug_vqy56xiSowsu0xoNt4",
   authDomain: "document-receive-system-966b5.firebaseapp.com",
   projectId: "document-receive-system-966b5",
-  storageBucket: "document-receive-system-966b5.firebasestorage.app",
+  storageBucket: "document-receive-system-966b5.appspot.com",   // ✅ FIXED
   messagingSenderId: "276323697273",
   appId: "1:276323697273:web:56fc212d209ed5547b8aa8"
 };
+
 
 /* ===== 2) IMPORT FIREBASE ===== */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
@@ -295,7 +294,7 @@ async function generateRefNo(){
 
 
 /* ===== 6) SAVE ===== */
-btnSave.addEventListener("click", async()=>{
+btnSave.addEventListener("click", async()=>{}{
   const date    = document.getElementById("date").value;
   const time    = document.getElementById("time").value;
   const subject = document.getElementById("subject").value.trim();
@@ -324,124 +323,7 @@ btnSave.addEventListener("click", async()=>{
 });
 
 
-/* ===== 7) TABLE + FILTER + SEARCH ===== */
-let cacheDocs=[];
-let currentFilter="ทั้งหมด";
+</script>
 
-function renderTable(){
-  const kw = (searchBox.value||"").toLowerCase();
-
-  const filtered = cacheDocs
-    .filter(({data}) => currentFilter==="ทั้งหมด" || data.status===currentFilter)
-    .filter(({data})=>{
-      if(!kw) return true;
-      return (
-        (data.refno||"").toLowerCase().includes(kw) ||
-        (data.subject||"").toLowerCase().includes(kw) ||
-        (data.from||"").toLowerCase().includes(kw)
-      );
-    });
-
-  tbody.innerHTML="";
-
-  filtered.forEach(({id,data,createdText})=>{
-    const tr=document.createElement("tr");
-    tr.innerHTML=`
-      <td>${data.refno||"-"}</td>
-      <td>${data.date||"-"}</td>
-      <td>${data.time||"-"}</td>
-      <td>${data.subject||"-"}</td>
-      <td>${data.urgency||"-"}</td>
-      <td>${data.secret||"-"}</td>
-      <td>${data.from||"-"}</td>
-      <td>${data.note||"-"}</td>
-      <td>${statusIcon(data.status)} ${data.status}</td>
-      <td>${createdText}</td>
-      <td>
-        <button onclick="updateStatus('${id}','รอเซ็น')">รอเซ็น</button>
-        <button onclick="updateStatus('${id}','เซ็นแล้ว')">เซ็นแล้ว</button>
-        <button onclick="updateStatus('${id}','ส่งคืนแก้ไข')">ส่งคืนแก้ไข</button>
-      </td>
-    `;
-    tbody.appendChild(tr);
-  });
-}
-
-searchBox.addEventListener("input",renderTable);
-
-document.getElementById("filterAll").onclick     = ()=>{ currentFilter="ทั้งหมด"; renderTable(); };
-document.getElementById("filterWait").onclick     = ()=>{ currentFilter="รอเสนอ"; renderTable(); };
-document.getElementById("filterPending").onclick  = ()=>{ currentFilter="รอเซ็น"; renderTable(); };
-document.getElementById("filterSigned").onclick   = ()=>{ currentFilter="เซ็นแล้ว"; renderTable(); };
-document.getElementById("filterReturn").onclick   = ()=>{ currentFilter="ส่งคืนแก้ไข"; renderTable(); };
-
-
-/* ===== 8) LOAD REALTIME ===== */
-const qList = query(docsCol, orderBy("createdAt","desc"));
-onSnapshot(qList ,(snap)=>{
-  cacheDocs=[];
-  snap.forEach((ds)=>{
-    const d=ds.data();
-    const created = d.createdAt?.toDate?.();
-    cacheDocs.push({
-      id:ds.id,
-      data:d,
-      createdText: created? fmtDateTimeTH(created):"-"
-    });
-  });
-  renderTable();
-});
-
-
-/* ===== 9) UPDATE STATUS ===== */
-async function _updateStatus(id,newStatus){
-  try{
-    await updateDoc(doc(db,"incoming_docs",id),{
-      status:newStatus
-    });
-    updateDashboard();
-  }catch(e){
-    console.error(e);
-    alert("❌ อัปเดตไม่สำเร็จ");
-  }
-}
-window.updateStatus=_updateStatus;
-
-
-/* ===== 10) EXPORT EXCEL ===== */
-exportBtn.addEventListener("click",async()=>{
-  const snap = await getDocs(qList);
-  const rows=[];
-
-  snap.forEach((ds)=>{
-    const d=ds.data();
-    const created = d.createdAt?.toDate?.();
-    rows.push({
-      เลขรับ: d.refno,
-      วันที่รับ: d.date,
-      เวลา: d.time,
-      เรื่อง: d.subject,
-      ความด่วน: d.urgency,
-      ชั้นความลับ: d.secret,
-      ผู้เสนอ: d.from,
-      หมายเหตุ: d.note,
-      สถานะ: d.status,
-      บันทึกเมื่อ: created? fmtDateTimeTH(created):"-"
-    });
-  });
-
-  const ws = XLSX.utils.json_to_sheet(rows);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,ws,"Docs");
-
-  XLSX.writeFile(wb,"incoming-docs.xlsx");
-});
-
-
-/* ===== 11) DASHBOARD ===== */
-async function updateDashboard(){
-  const now=new Date();
-  const startDay = new Date(now.getFullYear(),now.getMonth(),now.getDate());
-  const startMonth = new Date(now.getFullYear(),now.getMonth(),1);
-
-  const qDay = query(docsCol, where("createdAt", ">=", Timestamp.fromDate(startDay))
+</body>
+</html>
