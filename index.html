@@ -14,7 +14,6 @@
   .row {display:grid;grid-template-columns:1fr 1fr;gap:15px}
   label {font-size:14px;color:#003366;font-weight:500}
   input,select {width:100%;padding:10px;border:1px solid #cfd8e3;border-radius:8px;font-size:14px;background:#fff;transition:.2s}
-  input:focus,select:focus {border-color:#0d6efd;box-shadow:0 0 5px rgba(13,110,253,0.3)}
   button {padding:10px;background:#0d6efd;border:none;color:#fff;border-radius:10px;font-size:15px;cursor:pointer}
   button:hover {background:#0a58ca}
   table {width:100%;border-collapse:collapse;margin-top:18px}
@@ -31,7 +30,7 @@
 
 <main>
 
-  <h3>บันทึกข้อมูล</h3>
+  <h3>บันทึกข้อมูลใหม่</h3>
 
   <form id="docForm">
 
@@ -130,6 +129,8 @@
 
 </main>
 
+
+<!-- ✅ Firestore + Status History + Export -->
 <script type="module">
 
 /* ✅ Firebase Config */
@@ -142,25 +143,27 @@ const firebaseConfig = {
   appId: "1:105318430473:web:0023244038de907be685d8"
 };
 
+/* ✅ IMPORT */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
 import {
-  getFirestore, collection, addDoc, serverTimestamp,
-  query, orderBy, onSnapshot, getDocs, updateDoc,
-  doc, arrayUnion, limit
+  getFirestore, collection, addDoc, updateDoc, serverTimestamp,
+  query, orderBy, onSnapshot, getDocs, doc, arrayUnion, limit
 } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
 
 import * as XLSX from "https://cdn.sheetjs.com/xlsx-latest/package/xlsx.mjs";
 
+/* ✅ init */
 const app = initializeApp(firebaseConfig);
 const db  = getFirestore(app);
 const docsCol = collection(db, "incoming_docs");
 
-const tbody = document.querySelector("#docTable tbody");
+const tbody     = document.querySelector("#docTable tbody");
 const searchBox = document.getElementById("searchBox");
-const btnSave  = document.getElementById("saveBtn");
+const btnSave   = document.getElementById("saveBtn");
 const exportBtn = document.getElementById("exportBtn");
 
-/* ✅ Running Number */
+
+/* ✅ Generate Running No. */
 async function generateRefNo(){
   const yearTH = new Date().getFullYear()+543;
   const qLast = query(docsCol, orderBy("refno","desc"), limit(1));
@@ -174,10 +177,12 @@ async function generateRefNo(){
       next = (parseInt(seq)||0)+1;
     }
   }
+
   return String(next).padStart(3,"0")+"/"+yearTH;
 }
 
-/* ✅ Save */
+
+/* ✅ SAVE DOC */
 btnSave.addEventListener("click", async()=>{
 
   const date    = document.getElementById("date").value;
@@ -194,21 +199,21 @@ btnSave.addEventListener("click", async()=>{
   }
 
   try {
-
     const refno = await generateRefNo();
+    const ts = serverTimestamp();
 
+    // ✅ Step1 — add
     const docRef = await addDoc(docsCol,{
       refno, date, time, subject, urgency, secret, from, note,
-      status: "รอเสนอ",
-      createdAt: serverTimestamp(),
-      statusHistory: []    // ✅ ว่างไว้ก่อน
+      status:"รอเสนอ",
+      createdAt: ts
     });
 
-    // ✅ Add history
+    // ✅ Step2 — update status history
     await updateDoc(docRef,{
       statusHistory: arrayUnion({
-        status: "รอเสนอ",
-        updatedAt: serverTimestamp()
+        status:"รอเสนอ",
+        updatedAt: ts
       })
     });
 
@@ -220,18 +225,24 @@ btnSave.addEventListener("click", async()=>{
   }
 });
 
+
 /* ✅ UPDATE STATUS */
 async function changeStatus(id, newStatus){
   const ref = doc(db, "incoming_docs", id);
-  try {
+
+  try{
+    const ts = serverTimestamp();
+
     await updateDoc(ref,{
       status:newStatus,
       statusHistory: arrayUnion({
-        status: newStatus,
-        updatedAt: serverTimestamp()
+        status:newStatus,
+        updatedAt: ts
       })
     });
+
     alert("✅ อัปเดตสถานะแล้ว");
+
   }catch(e){
     console.error(e);
     alert("❌ อัปเดตไม่สำเร็จ");
@@ -239,12 +250,12 @@ async function changeStatus(id, newStatus){
 }
 window.changeStatus = changeStatus;
 
+
 /* ✅ LOAD DATA */
 function loadData(filter="ทั้งหมด"){
   const q = query(docsCol, orderBy("createdAt","desc"));
 
-  onSnapshot(q, (snap)=>{
-
+  onSnapshot(q,(snap)=>{
     let html="";
     const keyword = searchBox.value.toLowerCase();
 
@@ -270,7 +281,6 @@ function loadData(filter="ทั้งหมด"){
         <td>${d.note}</td>
         <td>${d.status}</td>
         <td>${d.createdAt?.toDate ? d.createdAt.toDate().toLocaleString("th-TH") : "-"}</td>
-
         <td>
           <select onchange="changeStatus('${docSnap.id}', this.value)">
             <option value="">เลือก</option>
@@ -288,13 +298,15 @@ function loadData(filter="ทั้งหมด"){
 }
 loadData();
 
+
 searchBox.addEventListener("input", ()=> loadData());
 
-/* ✅ export */
+
+/* ✅ EXPORT EXCEL */
 exportBtn.addEventListener("click", async()=>{
 
-  const snap = await getDocs(query(docsCol,orderBy("createdAt","desc")));
-  let rows=[];
+  const snap = await getDocs(query(docsCol, orderBy("createdAt","desc")));
+  let rows = [];
 
   snap.forEach(docSnap=>{
     let d = docSnap.data();
@@ -316,6 +328,7 @@ exportBtn.addEventListener("click", async()=>{
       ชั้นความลับ: d.secret,
       สถานะ: d.status,
       ประวัติสถานะ: history,
+      จัดการ: "รอเสนอ / รอเซ็น / เซ็นแล้ว / ส่งคืนแก้ไข",
       บันทึกเมื่อ: d.createdAt?.toDate?.().toLocaleString("th-TH") ?? "-"
     });
   });
@@ -328,7 +341,8 @@ exportBtn.addEventListener("click", async()=>{
   alert("✅ Export สำเร็จ");
 });
 
-/* ✅ Filter Button */
+
+/* ✅ Filter buttons */
 filterAll.onclick     = ()=> loadData("ทั้งหมด");
 filterWait.onclick    = ()=> loadData("รอเสนอ");
 filterPending.onclick = ()=> loadData("รอเซ็น");
