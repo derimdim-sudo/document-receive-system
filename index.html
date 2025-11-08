@@ -9,89 +9,21 @@
 <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet" />
 
 <style>
-  body {
-    font-family: "Prompt", sans-serif;
-    background: #e9f2ff;
-    margin: 0;
-  }
-  header {
-    background: #0d6efd;
-    color: #fff;
-    padding: 18px;
-    font-size: 20px;
-    font-weight: 600;
-    text-align: center;
-  }
-  main {
-    max-width: 1100px;
-    background: #fff;
-    margin: 25px auto;
-    padding: 28px;
-    border-radius: 14px;
-    box-shadow: 0 6px 20px rgba(0,0,0,0.08);
-  }
-  .row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 15px;
-  }
-  label {
-    font-size: 14px;
-    color: #003366;
-    font-weight: 500;
-  }
-  input, select {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #cfd8e3;
-    border-radius: 8px;
-    font-size: 14px;
-    background: #fff;
-    transition: 0.2s;
-  }
-  input:focus, select:focus {
-    border-color: #0d6efd;
-    box-shadow: 0 0 5px rgba(13,110,253,0.3);
-  }
-  button {
-    padding: 10px;
-    background: #0d6efd;
-    border: none;
-    color: #fff;
-    border-radius: 10px;
-    font-size: 15px;
-    cursor: pointer;
-  }
-  button:hover { background: #0a58ca; }
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 18px;
-  }
-  th {
-    background: #e5f1ff;
-    padding: 9px;
-    font-size: 14px;
-  }
-  td {
-    padding: 8px;
-    font-size: 14px;
-    border-bottom: 1px solid #e7e7e7;
-  }
-  tr:nth-child(even) { background: #f8fbff; }
-  .filter-row {
-    display: grid;
-    grid-template-columns: repeat(5,1fr);
-    gap: 8px;
-    margin: 16px 0;
-  }
-  #dashboard {
-    background: #f1f8ff;
-    padding: 14px;
-    border-radius: 12px;
-    margin-top: 20px;
-    border: 1px solid #cfe2ff;
-  }
+  body {font-family:"Prompt",sans-serif;background:#e9f2ff;margin:0}
+  header {background:#0d6efd;color:#fff;padding:18px;font-size:20px;font-weight:600;text-align:center}
+  main {max-width:1100px;background:#fff;margin:25px auto;padding:28px;border-radius:14px;box-shadow:0 6px 20px rgba(0,0,0,0.08)}
+  .row {display:grid;grid-template-columns:1fr 1fr;gap:15px}
+  label {font-size:14px;color:#003366;font-weight:500}
+  input,select {width:100%;padding:10px;border:1px solid #cfd8e3;border-radius:8px;font-size:14px;background:#fff;transition:.2s}
+  input:focus,select:focus {border-color:#0d6efd;box-shadow:0 0 5px rgba(13,110,253,0.3)}
+  button {padding:10px;background:#0d6efd;border:none;color:#fff;border-radius:10px;font-size:15px;cursor:pointer}
+  button:hover {background:#0a58ca}
+  table {width:100%;border-collapse:collapse;margin-top:18px}
+  th {background:#e5f1ff;padding:9px;font-size:14px}
+  td {padding:8px;font-size:14px;border-bottom:1px solid #e7e7e7}
+  tr:nth-child(even){background:#f8fbff}
+  .filter-row {display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:16px 0}
+  #dashboard {background:#f1f8ff;padding:14px;border-radius:12px;margin-top:20px;border:1px solid #cfe2ff}
 </style>
 </head>
 
@@ -198,8 +130,7 @@
   </div>
 
 </main>
-
-<!-- ✅ Firestore -->
+<!-- ✅ Firestore + Status History + Export -->
 <script type="module">
 
 /* ✅ Firebase Config (doc-receive-v2) */
@@ -212,25 +143,28 @@ const firebaseConfig = {
   appId: "1:939669402617:web:2a58e6b74f87069b5f4328"
 };
 
-
-/* ✅ Firebase Import */
+/* ✅ IMPORT */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
 import {
   getFirestore, collection, addDoc, serverTimestamp,
-  query, orderBy, onSnapshot, getDocs, updateDoc, doc, limit
+  query, orderBy, onSnapshot, getDocs, updateDoc,
+  doc, arrayUnion, limit
 } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
 
-/* ✅ Init Firestore */
+import * as XLSX from "https://cdn.sheetjs.com/xlsx-latest/package/xlsx.mjs";
+
+/* ✅ FIRESTORE INIT */
 const app = initializeApp(firebaseConfig);
 const db  = getFirestore(app);
 const docsCol = collection(db, "incoming_docs");
 
-/* DOM */
-const tbody = document.querySelector("#docTable tbody");
-const btnSave = document.getElementById("saveBtn");
+/* ✅ DOM */
+const tbody     = document.querySelector("#docTable tbody");
 const searchBox = document.getElementById("searchBox");
+const btnSave   = document.getElementById("saveBtn");
+const exportBtn = document.getElementById("exportBtn");
 
-/* ✅ Create Running Number */
+/* ✅ Running Number */
 async function generateRefNo(){
   const yearTH = new Date().getFullYear()+543;
   const qLast = query(docsCol, orderBy("refno","desc"), limit(1));
@@ -239,7 +173,7 @@ async function generateRefNo(){
 
   if(!snap.empty){
     const last = snap.docs[0].data().refno || "";
-    const [seq,y]= (last+"").split("/");
+    const [seq,y] = (last+"").split("/");
     if(parseInt(y)===yearTH){
       next = (parseInt(seq)||0)+1;
     }
@@ -258,49 +192,70 @@ btnSave.addEventListener("click", async()=>{
   const note    = document.getElementById("note").value.trim();
 
   if(!date || !time || !subject || !from){
-    alert("กรุณากรอก วันที่ / เวลา / เรื่อง / ผู้เสนอ");
+    alert("กรุณากรอก วันที่/เวลา/เรื่อง/ผู้เสนอ");
     return;
   }
 
-  try{
+  try {
     const refno = await generateRefNo();
     await addDoc(docsCol,{
       refno, date, time, subject, urgency, secret, from, note,
       status:"รอเสนอ",
       createdAt: serverTimestamp(),
+      statusHistory: arrayUnion({
+        status: "รอเสนอ",
+        updatedAt: serverTimestamp()
+      })
     });
     alert("✅ บันทึกสำเร็จ");
-  }catch(e){
+  }
+  catch(e){
     console.error(e);
     alert("❌ บันทึกไม่สำเร็จ");
   }
 });
 
 /* ✅ UPDATE STATUS */
-async function updateStatus(id, newStatus) {
+async function changeStatus(id, newStatus){
+  const ref = doc(db, "incoming_docs", id);
   try {
-    await updateDoc(doc(db, "incoming_docs", id), {
-      status: newStatus
+    await updateDoc(ref,{
+      status:newStatus,
+      statusHistory: arrayUnion({
+        status: newStatus,
+        updatedAt: serverTimestamp()
+      })
     });
-    alert("✅ อัปเดตสถานะสำเร็จ");
-  } catch (e) {
+    alert("✅ อัปเดตสถานะแล้ว");
+  }catch(e){
     console.error(e);
-    alert("❌ อัปเดตสถานะไม่สำเร็จ");
+    alert("❌ อัปเดตไม่สำเร็จ");
   }
 }
+window.changeStatus = changeStatus;
 
-/* ✅ LOAD DATA */
-function loadData(filterStatus="ทั้งหมด"){
+/* ✅ LOAD DATA + FILTER + SEARCH */
+function loadData(filter="ทั้งหมด"){
   const q = query(docsCol, orderBy("createdAt","desc"));
 
-  onSnapshot(q, (snapshot)=>{
-    let rows="";
-    snapshot.forEach((docSnap)=>{
+  onSnapshot(q, (snap)=>{
+    let html="";
+    const keyword = searchBox.value.toLowerCase();
+
+    snap.forEach(docSnap=>{
       const d = docSnap.data();
 
-      if(filterStatus!=="ทั้งหมด" && d.status!==filterStatus) return;
+      if(filter!=="ทั้งหมด" && d.status!==filter) return;
 
-      rows += `
+      // ✅ Search
+      if(keyword){
+        const text = `
+          ${d.refno} ${d.subject} ${d.from} ${d.note}
+        `.toLowerCase();
+        if(!text.includes(keyword)) return;
+      }
+
+      html += `
       <tr>
         <td>${d.refno}</td>
         <td>${d.date}</td>
@@ -313,9 +268,9 @@ function loadData(filterStatus="ทั้งหมด"){
         <td>${d.status}</td>
         <td>${d.createdAt?.toDate ? d.createdAt.toDate().toLocaleString("th-TH") : "-"}</td>
 
-        <!-- ✅ เพิ่ม dropdown เปลี่ยนสถานะ -->
+        <!-- ✅ Dropdown "จัดการ" -->
         <td>
-          <select onchange="updateStatus('${docSnap.id}', this.value)">
+          <select onchange="changeStatus('${docSnap.id}', this.value)">
             <option value="">เลือก</option>
             <option value="รอเสนอ">รอเสนอ</option>
             <option value="รอเซ็น">รอเซ็น</option>
@@ -326,19 +281,56 @@ function loadData(filterStatus="ทั้งหมด"){
       </tr>`;
     });
 
-    tbody.innerHTML = rows;
+    tbody.innerHTML = html;
   });
 }
-
 loadData();
 
-/* ✅ Filter Button */
-document.getElementById("filterAll").onclick      = ()=> loadData("ทั้งหมด");
-document.getElementById("filterWait").onclick     = ()=> loadData("รอเสนอ");
-document.getElementById("filterPending").onclick  = ()=> loadData("รอเซ็น");
-document.getElementById("filterSigned").onclick   = ()=> loadData("เซ็นแล้ว");
-document.getElementById("filterReturn").onclick   = ()=> loadData("ส่งคืนแก้ไข");
+searchBox.addEventListener("input", ()=> loadData());
+
+/* ✅ Filter buttons */
+filterAll.onclick     = ()=> loadData("ทั้งหมด");
+filterWait.onclick    = ()=> loadData("รอเสนอ");
+filterPending.onclick = ()=> loadData("รอเซ็น");
+filterSigned.onclick  = ()=> loadData("เซ็นแล้ว");
+filterReturn.onclick  = ()=> loadData("ส่งคืนแก้ไข");
+
+/* ✅ Export Excel */
+exportBtn.addEventListener("click", async()=>{
+  const snap = await getDocs(query(docsCol,orderBy("createdAt","desc")));
+  let rows=[];
+
+  snap.forEach(docSnap=>{
+    let d = docSnap.data();
+
+    let history = "-";
+    if(d.statusHistory){
+      history = d.statusHistory
+        .map(x=>`${x.status} (${x.updatedAt?.toDate?.().toLocaleString("th-TH") ?? "-"})`)
+        .join(",\n");
+    }
+
+    rows.push({
+      เลขรับ: d.refno,
+      วันที่รับ: d.date,
+      เวลา: d.time,
+      เรื่อง: d.subject,
+      ผู้เสนอ: d.from,
+      ความด่วน: d.urgency,
+      ชั้นความลับ: d.secret,
+      สถานะ: d.status,
+      ประวัติสถานะ: history,
+      จัดการ: "รอเสนอ / รอเซ็น / เซ็นแล้ว / ส่งคืนแก้ไข",
+      บันทึกเมื่อ: d.createdAt?.toDate?.().toLocaleString("th-TH") ?? "-"
+    });
+  });
+
+  let wb = XLSX.utils.book_new();
+  let ws = XLSX.utils.json_to_sheet(rows);
+  XLSX.utils.book_append_sheet(wb,ws,"incoming_docs");
+  XLSX.writeFile(wb,"incoming_docs.xlsx");
+
+  alert("✅ Export สำเร็จ");
+});
 
 </script>
-</body>
-</html>
