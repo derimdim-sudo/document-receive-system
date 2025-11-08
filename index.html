@@ -199,16 +199,19 @@
 
 </main>
 
+<!-- ✅ Firestore -->
 <script type="module">
-/* ✅ Firebase Config */
+
+/* ✅ Firebase Config (doc-receive-v2) */
 const firebaseConfig = {
-  apiKey: "AIzaSyAdJmcdoa3S0Aug_vqy56xiSowsu0xoNt4",
-  authDomain: "document-receive-system-966b5.firebaseapp.com",
-  projectId: "document-receive-system-966b5",
-  storageBucket: "document-receive-system-966b5.appspot.com",
-  messagingSenderId: "276323697273",
-  appId: "1:276323697273:web:56fc212d209ed5547b8aa8"
+  apiKey: "AIzaSyD0vs1x_nddcNUI8F_T1RiGyLQELIJ1Fyg",
+  authDomain: "doc-receive-v2.firebaseapp.com",
+  projectId: "doc-receive-v2",
+  storageBucket: "doc-receive-v2.firebasestorage.app",
+  messagingSenderId: "939669402617",
+  appId: "1:939669402617:web:2a58e6b74f87069b5f4328"
 };
+
 
 /* ✅ Firebase Import */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
@@ -218,9 +221,7 @@ import {
   getDocs, where, Timestamp, limit
 } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
 
-import * as XLSX from "https://cdn.sheetjs.com/xlsx-latest/package/xlsx.mjs";
-
-/* ✅ Init */
+/* ✅ Init Firestore */
 const app = initializeApp(firebaseConfig);
 const db  = getFirestore(app);
 const docsCol = collection(db, "incoming_docs");
@@ -228,27 +229,9 @@ const docsCol = collection(db, "incoming_docs");
 /* DOM */
 const tbody = document.querySelector("#docTable tbody");
 const btnSave = document.getElementById("saveBtn");
-const searchBox = document.getElementById("searchBox");
-const exportBtn = document.getElementById("exportBtn");
-const dailyEl   = document.getElementById("dailyCount");
-const monthlyEl = document.getElementById("monthlyCount");
 
-/* Format Date */
-const fmtDateTimeTH = (d) =>
-  new Intl.DateTimeFormat("th-TH", { dateStyle:"short", timeStyle:"short" }).format(d);
 
-/* Icons */
-const statusIcon = (s)=>{
-  switch(s){
-    case "รอเสนอ": return "🟡";
-    case "รอเซ็น": return "🔵";
-    case "เซ็นแล้ว": return "🟢";
-    case "ส่งคืนแก้ไข": return "🔴";
-    default: return "⚪";
-  }
-};
-
-/* ✅ Running Number */
+/* ✅ Create Running Number */
 async function generateRefNo(){
   const yearTH = new Date().getFullYear()+543;
   const qLast = query(docsCol, orderBy("refno","desc"), limit(1));
@@ -257,7 +240,7 @@ async function generateRefNo(){
 
   if(!snap.empty){
     const last = snap.docs[0].data().refno || "";
-    const [seq,y]= last.split("/");
+    const [seq,y]= (last+"").split("/");
     if(parseInt(y)===yearTH){
       next = (parseInt(seq)||0)+1;
     }
@@ -276,7 +259,7 @@ btnSave.addEventListener("click", async()=>{
   const note    = document.getElementById("note").value.trim();
 
   if(!date || !time || !subject || !from){
-    alert("กรุณากรอก วันที่/เวลา/เรื่อง/ผู้เสนอ");
+    alert("กรุณากรอก วันที่ / เวลา / เรื่อง / ผู้เสนอ");
     return;
   }
 
@@ -295,6 +278,5 @@ btnSave.addEventListener("click", async()=>{
 });
 
 </script>
-
 </body>
 </html>
