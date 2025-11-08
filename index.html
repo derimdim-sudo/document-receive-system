@@ -217,8 +217,7 @@ const firebaseConfig = {
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
 import {
   getFirestore, collection, addDoc, serverTimestamp,
-  query, orderBy, onSnapshot, updateDoc, doc,
-  getDocs, where, Timestamp, limit
+  query, orderBy, onSnapshot, getDocs, limit
 } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
 
 /* ✅ Init Firestore */
@@ -229,7 +228,7 @@ const docsCol = collection(db, "incoming_docs");
 /* DOM */
 const tbody = document.querySelector("#docTable tbody");
 const btnSave = document.getElementById("saveBtn");
-
+const searchBox = document.getElementById("searchBox");
 
 /* ✅ Create Running Number */
 async function generateRefNo(){
@@ -276,6 +275,46 @@ btnSave.addEventListener("click", async()=>{
     alert("❌ บันทึกไม่สำเร็จ");
   }
 });
+
+/* ✅ Load data */
+function loadData(filterStatus="ทั้งหมด"){
+  const q = query(docsCol, orderBy("createdAt","desc"));
+
+  onSnapshot(q, (snapshot)=>{
+    let rows="";
+    snapshot.forEach((doc)=>{
+      const d = doc.data();
+
+      if(filterStatus!=="ทั้งหมด" && d.status!==filterStatus) return;
+
+      rows += `
+      <tr>
+        <td>${d.refno}</td>
+        <td>${d.date}</td>
+        <td>${d.time}</td>
+        <td>${d.subject}</td>
+        <td>${d.urgency}</td>
+        <td>${d.secret}</td>
+        <td>${d.from}</td>
+        <td>${d.note}</td>
+        <td>${d.status}</td>
+        <td>${d.createdAt?.toDate ? d.createdAt.toDate().toLocaleString("th-TH") : "-"}</td>
+        <td>-</td>
+      </tr>`;
+    });
+
+    tbody.innerHTML = rows;
+  });
+}
+
+loadData();
+
+/* ✅ Filter Button */
+document.getElementById("filterAll").onclick      = ()=> loadData("ทั้งหมด");
+document.getElementById("filterWait").onclick     = ()=> loadData("รอเสนอ");
+document.getElementById("filterPending").onclick  = ()=> loadData("รอเซ็น");
+document.getElementById("filterSigned").onclick   = ()=> loadData("เซ็นแล้ว");
+document.getElementById("filterReturn").onclick   = ()=> loadData("ส่งคืนแก้ไข");
 
 </script>
 </body>
