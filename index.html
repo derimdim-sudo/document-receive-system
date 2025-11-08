@@ -14,6 +14,7 @@
   .row {display:grid;grid-template-columns:1fr 1fr;gap:15px}
   label {font-size:14px;color:#003366;font-weight:500}
   input,select {width:100%;padding:10px;border:1px solid #cfd8e3;border-radius:8px;font-size:14px;background:#fff;transition:.2s}
+  input:focus,select:focus {border-color:#0d6efd;box-shadow:0 0 5px rgba(13,110,253,0.3)}
   button {padding:10px;background:#0d6efd;border:none;color:#fff;border-radius:10px;font-size:15px;cursor:pointer}
   button:hover {background:#0a58ca}
   table {width:100%;border-collapse:collapse;margin-top:18px}
@@ -37,7 +38,7 @@
     <div class="row">
       <div>
         <label>เลขรับ</label>
-        <input id="refno" placeholder="จะสร้างอัตโนมัติ" disabled />
+        <input id="refno" placeholder="สร้างอัตโนมัติ" disabled />
       </div>
 
       <div>
@@ -146,8 +147,9 @@ const firebaseConfig = {
 /* ✅ IMPORT */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
 import {
-  getFirestore, collection, addDoc, updateDoc, serverTimestamp,
-  query, orderBy, onSnapshot, getDocs, doc, arrayUnion, limit
+  getFirestore, collection, addDoc, serverTimestamp, Timestamp,
+  query, orderBy, onSnapshot, getDocs, updateDoc,
+  doc, arrayUnion, limit
 } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
 
 import * as XLSX from "https://cdn.sheetjs.com/xlsx-latest/package/xlsx.mjs";
@@ -157,13 +159,13 @@ const app = initializeApp(firebaseConfig);
 const db  = getFirestore(app);
 const docsCol = collection(db, "incoming_docs");
 
+/* DOM */
 const tbody     = document.querySelector("#docTable tbody");
 const searchBox = document.getElementById("searchBox");
 const btnSave   = document.getElementById("saveBtn");
 const exportBtn = document.getElementById("exportBtn");
 
-
-/* ✅ Generate Running No. */
+/* ✅ Running Number */
 async function generateRefNo(){
   const yearTH = new Date().getFullYear()+543;
   const qLast = query(docsCol, orderBy("refno","desc"), limit(1));
@@ -177,12 +179,10 @@ async function generateRefNo(){
       next = (parseInt(seq)||0)+1;
     }
   }
-
   return String(next).padStart(3,"0")+"/"+yearTH;
 }
 
-
-/* ✅ SAVE DOC */
+/* ✅ Save */
 btnSave.addEventListener("click", async()=>{
 
   const date    = document.getElementById("date").value;
@@ -200,49 +200,46 @@ btnSave.addEventListener("click", async()=>{
 
   try {
     const refno = await generateRefNo();
-    const ts = serverTimestamp();
 
-    // ✅ Step1 — add
     const docRef = await addDoc(docsCol,{
       refno, date, time, subject, urgency, secret, from, note,
       status:"รอเสนอ",
-      createdAt: ts
+      createdAt: serverTimestamp(),
+      statusHistory: []
     });
 
-    // ✅ Step2 — update status history
-    await updateDoc(docRef,{
-      statusHistory: arrayUnion({
-        status:"รอเสนอ",
-        updatedAt: ts
-      })
-    });
+    try {
+      await updateDoc(docRef,{
+        statusHistory: arrayUnion({
+          status: "รอเสนอ",
+          updatedAt: Timestamp.now()
+        })
+      });
+    } catch(err){
+      console.log("⚠️ update history fail: ", err);
+    }
 
     alert("✅ บันทึกสำเร็จ");
-
-  }catch(e){
+  }
+  catch(e){
     console.error(e);
     alert("❌ บันทึกไม่สำเร็จ");
   }
 });
 
 
-/* ✅ UPDATE STATUS */
+/* ✅ CHANGE STATUS */
 async function changeStatus(id, newStatus){
   const ref = doc(db, "incoming_docs", id);
-
-  try{
-    const ts = serverTimestamp();
-
+  try {
     await updateDoc(ref,{
       status:newStatus,
       statusHistory: arrayUnion({
-        status:newStatus,
-        updatedAt: ts
+        status: newStatus,
+        updatedAt: Timestamp.now()
       })
     });
-
     alert("✅ อัปเดตสถานะแล้ว");
-
   }catch(e){
     console.error(e);
     alert("❌ อัปเดตไม่สำเร็จ");
@@ -255,7 +252,8 @@ window.changeStatus = changeStatus;
 function loadData(filter="ทั้งหมด"){
   const q = query(docsCol, orderBy("createdAt","desc"));
 
-  onSnapshot(q,(snap)=>{
+  onSnapshot(q, (snap)=>{
+
     let html="";
     const keyword = searchBox.value.toLowerCase();
 
@@ -301,12 +299,11 @@ loadData();
 
 searchBox.addEventListener("input", ()=> loadData());
 
-
-/* ✅ EXPORT EXCEL */
+/* ✅ EXPORT */
 exportBtn.addEventListener("click", async()=>{
 
-  const snap = await getDocs(query(docsCol, orderBy("createdAt","desc")));
-  let rows = [];
+  const snap = await getDocs(query(docsCol,orderBy("createdAt","desc")));
+  let rows=[];
 
   snap.forEach(docSnap=>{
     let d = docSnap.data();
@@ -328,7 +325,6 @@ exportBtn.addEventListener("click", async()=>{
       ชั้นความลับ: d.secret,
       สถานะ: d.status,
       ประวัติสถานะ: history,
-      จัดการ: "รอเสนอ / รอเซ็น / เซ็นแล้ว / ส่งคืนแก้ไข",
       บันทึกเมื่อ: d.createdAt?.toDate?.().toLocaleString("th-TH") ?? "-"
     });
   });
@@ -342,7 +338,7 @@ exportBtn.addEventListener("click", async()=>{
 });
 
 
-/* ✅ Filter buttons */
+/* ✅ Filter Button */
 filterAll.onclick     = ()=> loadData("ทั้งหมด");
 filterWait.onclick    = ()=> loadData("รอเสนอ");
 filterPending.onclick = ()=> loadData("รอเซ็น");
