@@ -130,10 +130,12 @@
   </div>
 
 </main>
+
+
 <!-- ✅ Firestore + Status History + Export -->
 <script type="module">
 
-/* ✅ Firebase Config (doc-receive-v2) */
+/* ✅ Firebase Config */
 const firebaseConfig = {
   apiKey: "AIzaSyD0vs1x_nddcNUI8F_T1RiGyLQELIJ1Fyg",
   authDomain: "doc-receive-v2.firebaseapp.com",
@@ -153,12 +155,12 @@ import {
 
 import * as XLSX from "https://cdn.sheetjs.com/xlsx-latest/package/xlsx.mjs";
 
-/* ✅ FIRESTORE INIT */
+/* ✅ init */
 const app = initializeApp(firebaseConfig);
 const db  = getFirestore(app);
 const docsCol = collection(db, "incoming_docs");
 
-/* ✅ DOM */
+/* DOM */
 const tbody     = document.querySelector("#docTable tbody");
 const searchBox = document.getElementById("searchBox");
 const btnSave   = document.getElementById("saveBtn");
@@ -181,7 +183,7 @@ async function generateRefNo(){
   return String(next).padStart(3,"0")+"/"+yearTH;
 }
 
-/* ✅ SAVE */
+/* ✅ Save */
 btnSave.addEventListener("click", async()=>{
   const date    = document.getElementById("date").value;
   const time    = document.getElementById("time").value;
@@ -192,7 +194,7 @@ btnSave.addEventListener("click", async()=>{
   const note    = document.getElementById("note").value.trim();
 
   if(!date || !time || !subject || !from){
-    alert("กรุณากรอก วันที่/เวลา/เรื่อง/ผู้เสนอ");
+    alert("กรุณากรอก วันที่ / เวลา / เรื่อง / ผู้เสนอ");
     return;
   }
 
@@ -202,11 +204,16 @@ btnSave.addEventListener("click", async()=>{
       refno, date, time, subject, urgency, secret, from, note,
       status:"รอเสนอ",
       createdAt: serverTimestamp(),
-      statusHistory: arrayUnion({
-        status: "รอเสนอ",
-        updatedAt: serverTimestamp()
-      })
+
+      /* ✅ History first record (NO arrayUnion here) */
+      statusHistory: [
+        {
+          status: "รอเสนอ",
+          updatedAt: serverTimestamp()
+        }
+      ]
     });
+
     alert("✅ บันทึกสำเร็จ");
   }
   catch(e){
@@ -234,11 +241,12 @@ async function changeStatus(id, newStatus){
 }
 window.changeStatus = changeStatus;
 
-/* ✅ LOAD DATA + FILTER + SEARCH */
+/* ✅ LOAD DATA */
 function loadData(filter="ทั้งหมด"){
   const q = query(docsCol, orderBy("createdAt","desc"));
 
   onSnapshot(q, (snap)=>{
+
     let html="";
     const keyword = searchBox.value.toLowerCase();
 
@@ -249,9 +257,7 @@ function loadData(filter="ทั้งหมด"){
 
       // ✅ Search
       if(keyword){
-        const text = `
-          ${d.refno} ${d.subject} ${d.from} ${d.note}
-        `.toLowerCase();
+        const text = `${d.refno} ${d.subject} ${d.from} ${d.note}`.toLowerCase();
         if(!text.includes(keyword)) return;
       }
 
@@ -268,7 +274,7 @@ function loadData(filter="ทั้งหมด"){
         <td>${d.status}</td>
         <td>${d.createdAt?.toDate ? d.createdAt.toDate().toLocaleString("th-TH") : "-"}</td>
 
-        <!-- ✅ Dropdown "จัดการ" -->
+        <!-- ✅ dropdown -->
         <td>
           <select onchange="changeStatus('${docSnap.id}', this.value)">
             <option value="">เลือก</option>
@@ -288,15 +294,9 @@ loadData();
 
 searchBox.addEventListener("input", ()=> loadData());
 
-/* ✅ Filter buttons */
-filterAll.onclick     = ()=> loadData("ทั้งหมด");
-filterWait.onclick    = ()=> loadData("รอเสนอ");
-filterPending.onclick = ()=> loadData("รอเซ็น");
-filterSigned.onclick  = ()=> loadData("เซ็นแล้ว");
-filterReturn.onclick  = ()=> loadData("ส่งคืนแก้ไข");
-
-/* ✅ Export Excel */
+/* ✅ export */
 exportBtn.addEventListener("click", async()=>{
+
   const snap = await getDocs(query(docsCol,orderBy("createdAt","desc")));
   let rows=[];
 
@@ -307,7 +307,7 @@ exportBtn.addEventListener("click", async()=>{
     if(d.statusHistory){
       history = d.statusHistory
         .map(x=>`${x.status} (${x.updatedAt?.toDate?.().toLocaleString("th-TH") ?? "-"})`)
-        .join(",\n");
+        .join("\n");
     }
 
     rows.push({
@@ -333,4 +333,14 @@ exportBtn.addEventListener("click", async()=>{
   alert("✅ Export สำเร็จ");
 });
 
+/* ✅ Filter Button */
+filterAll.onclick     = ()=> loadData("ทั้งหมด");
+filterWait.onclick    = ()=> loadData("รอเสนอ");
+filterPending.onclick = ()=> loadData("รอเซ็น");
+filterSigned.onclick  = ()=> loadData("เซ็นแล้ว");
+filterReturn.onclick  = ()=> loadData("ส่งคืนแก้ไข");
+
 </script>
+
+</body>
+</html>
