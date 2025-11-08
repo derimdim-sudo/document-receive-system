@@ -160,7 +160,6 @@ const app = initializeApp(firebaseConfig);
 const db  = getFirestore(app);
 const docsCol = collection(db, "incoming_docs");
 
-/* DOM */
 const tbody     = document.querySelector("#docTable tbody");
 const searchBox = document.getElementById("searchBox");
 const btnSave   = document.getElementById("saveBtn");
@@ -205,11 +204,11 @@ btnSave.addEventListener("click", async()=>{
       status:"รอเสนอ",
       createdAt: serverTimestamp(),
 
-      /* ✅ History first record (NO arrayUnion here) */
+      /* ✅ History first record (updatedAt=null OK) */
       statusHistory: [
         {
           status: "รอเสนอ",
-          updatedAt: serverTimestamp()
+          updatedAt: null
         }
       ]
     });
@@ -226,6 +225,7 @@ btnSave.addEventListener("click", async()=>{
 async function changeStatus(id, newStatus){
   const ref = doc(db, "incoming_docs", id);
   try {
+
     await updateDoc(ref,{
       status:newStatus,
       statusHistory: arrayUnion({
@@ -233,6 +233,7 @@ async function changeStatus(id, newStatus){
         updatedAt: serverTimestamp()
       })
     });
+
     alert("✅ อัปเดตสถานะแล้ว");
   }catch(e){
     console.error(e);
@@ -241,7 +242,7 @@ async function changeStatus(id, newStatus){
 }
 window.changeStatus = changeStatus;
 
-/* ✅ LOAD DATA */
+/* LOAD DATA */
 function loadData(filter="ทั้งหมด"){
   const q = query(docsCol, orderBy("createdAt","desc"));
 
@@ -255,92 +256,5 @@ function loadData(filter="ทั้งหมด"){
 
       if(filter!=="ทั้งหมด" && d.status!==filter) return;
 
-      // ✅ Search
       if(keyword){
-        const text = `${d.refno} ${d.subject} ${d.from} ${d.note}`.toLowerCase();
-        if(!text.includes(keyword)) return;
-      }
-
-      html += `
-      <tr>
-        <td>${d.refno}</td>
-        <td>${d.date}</td>
-        <td>${d.time}</td>
-        <td>${d.subject}</td>
-        <td>${d.urgency}</td>
-        <td>${d.secret}</td>
-        <td>${d.from}</td>
-        <td>${d.note}</td>
-        <td>${d.status}</td>
-        <td>${d.createdAt?.toDate ? d.createdAt.toDate().toLocaleString("th-TH") : "-"}</td>
-
-        <!-- ✅ dropdown -->
-        <td>
-          <select onchange="changeStatus('${docSnap.id}', this.value)">
-            <option value="">เลือก</option>
-            <option value="รอเสนอ">รอเสนอ</option>
-            <option value="รอเซ็น">รอเซ็น</option>
-            <option value="เซ็นแล้ว">เซ็นแล้ว</option>
-            <option value="ส่งคืนแก้ไข">ส่งคืนแก้ไข</option>
-          </select>
-        </td>
-      </tr>`;
-    });
-
-    tbody.innerHTML = html;
-  });
-}
-loadData();
-
-searchBox.addEventListener("input", ()=> loadData());
-
-/* ✅ export */
-exportBtn.addEventListener("click", async()=>{
-
-  const snap = await getDocs(query(docsCol,orderBy("createdAt","desc")));
-  let rows=[];
-
-  snap.forEach(docSnap=>{
-    let d = docSnap.data();
-
-    let history = "-";
-    if(d.statusHistory){
-      history = d.statusHistory
-        .map(x=>`${x.status} (${x.updatedAt?.toDate?.().toLocaleString("th-TH") ?? "-"})`)
-        .join("\n");
-    }
-
-    rows.push({
-      เลขรับ: d.refno,
-      วันที่รับ: d.date,
-      เวลา: d.time,
-      เรื่อง: d.subject,
-      ผู้เสนอ: d.from,
-      ความด่วน: d.urgency,
-      ชั้นความลับ: d.secret,
-      สถานะ: d.status,
-      ประวัติสถานะ: history,
-      จัดการ: "รอเสนอ / รอเซ็น / เซ็นแล้ว / ส่งคืนแก้ไข",
-      บันทึกเมื่อ: d.createdAt?.toDate?.().toLocaleString("th-TH") ?? "-"
-    });
-  });
-
-  let wb = XLSX.utils.book_new();
-  let ws = XLSX.utils.json_to_sheet(rows);
-  XLSX.utils.book_append_sheet(wb,ws,"incoming_docs");
-  XLSX.writeFile(wb,"incoming_docs.xlsx");
-
-  alert("✅ Export สำเร็จ");
-});
-
-/* ✅ Filter Button */
-filterAll.onclick     = ()=> loadData("ทั้งหมด");
-filterWait.onclick    = ()=> loadData("รอเสนอ");
-filterPending.onclick = ()=> loadData("รอเซ็น");
-filterSigned.onclick  = ()=> loadData("เซ็นแล้ว");
-filterReturn.onclick  = ()=> loadData("ส่งคืนแก้ไข");
-
-</script>
-
-</body>
-</html>
+        const text = `${d.refno} ${d.subject} ${d.from}
