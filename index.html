@@ -155,7 +155,7 @@ import * as XLSX from "https://cdn.sheetjs.com/xlsx-latest/package/xlsx.mjs";
 /* ✅ init */
 const app = initializeApp(firebaseConfig);
 const db  = getFirestore(app);
-const docsCol = collection(db, "incoming_docs");
+const docsCol = collection(db, "incoming_docs_real");
 
 
 /* ✅ random suffix */
