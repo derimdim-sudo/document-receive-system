@@ -217,7 +217,7 @@ const firebaseConfig = {
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
 import {
   getFirestore, collection, addDoc, serverTimestamp,
-  query, orderBy, onSnapshot, getDocs, limit
+  query, orderBy, onSnapshot, getDocs, updateDoc, doc, limit
 } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
 
 /* ✅ Init Firestore */
@@ -276,14 +276,27 @@ btnSave.addEventListener("click", async()=>{
   }
 });
 
-/* ✅ Load data */
+/* ✅ UPDATE STATUS */
+async function updateStatus(id, newStatus) {
+  try {
+    await updateDoc(doc(db, "incoming_docs", id), {
+      status: newStatus
+    });
+    alert("✅ อัปเดตสถานะสำเร็จ");
+  } catch (e) {
+    console.error(e);
+    alert("❌ อัปเดตสถานะไม่สำเร็จ");
+  }
+}
+
+/* ✅ LOAD DATA */
 function loadData(filterStatus="ทั้งหมด"){
   const q = query(docsCol, orderBy("createdAt","desc"));
 
   onSnapshot(q, (snapshot)=>{
     let rows="";
-    snapshot.forEach((doc)=>{
-      const d = doc.data();
+    snapshot.forEach((docSnap)=>{
+      const d = docSnap.data();
 
       if(filterStatus!=="ทั้งหมด" && d.status!==filterStatus) return;
 
@@ -299,7 +312,17 @@ function loadData(filterStatus="ทั้งหมด"){
         <td>${d.note}</td>
         <td>${d.status}</td>
         <td>${d.createdAt?.toDate ? d.createdAt.toDate().toLocaleString("th-TH") : "-"}</td>
-        <td>-</td>
+
+        <!-- ✅ เพิ่ม dropdown เปลี่ยนสถานะ -->
+        <td>
+          <select onchange="updateStatus('${docSnap.id}', this.value)">
+            <option value="">เลือก</option>
+            <option value="รอเสนอ">รอเสนอ</option>
+            <option value="รอเซ็น">รอเซ็น</option>
+            <option value="เซ็นแล้ว">เซ็นแล้ว</option>
+            <option value="ส่งคืนแก้ไข">ส่งคืนแก้ไข</option>
+          </select>
+        </td>
       </tr>`;
     });
 
