@@ -131,7 +131,6 @@
 </main>
 
 
-<!-- ✅ Firestore + Status History + Export -->
 <script type="module">
 
 /* ✅ Firebase Config */
@@ -144,7 +143,6 @@ const firebaseConfig = {
   appId: "1:105318430473:web:0023244038de907be685d8"
 };
 
-/* ✅ IMPORT */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
 import {
   getFirestore, collection, addDoc, serverTimestamp, Timestamp,
@@ -159,11 +157,17 @@ const app = initializeApp(firebaseConfig);
 const db  = getFirestore(app);
 const docsCol = collection(db, "incoming_docs");
 
-/* DOM */
-const tbody     = document.querySelector("#docTable tbody");
-const searchBox = document.getElementById("searchBox");
-const btnSave   = document.getElementById("saveBtn");
-const exportBtn = document.getElementById("exportBtn");
+
+/* ✅ random suffix */
+function randomSuffix(len = 4) {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  let out = "";
+  for (let i = 0; i < len; i++) {
+    out += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return out;
+}
+
 
 /* ✅ Running Number */
 async function generateRefNo(){
@@ -179,11 +183,13 @@ async function generateRefNo(){
       next = (parseInt(seq)||0)+1;
     }
   }
-  return String(next).padStart(3,"0")+"/"+yearTH;
+
+  return String(next).padStart(3,"0")+"/"+yearTH+"-"+randomSuffix(4);
 }
 
+
 /* ✅ Save */
-btnSave.addEventListener("click", async()=>{
+document.getElementById("saveBtn").addEventListener("click", async()=>{
 
   const date    = document.getElementById("date").value;
   const time    = document.getElementById("time").value;
@@ -229,7 +235,7 @@ btnSave.addEventListener("click", async()=>{
 
 
 /* ✅ CHANGE STATUS */
-async function changeStatus(id, newStatus){
+window.changeStatus = async function(id, newStatus){
   const ref = doc(db, "incoming_docs", id);
   try {
     await updateDoc(ref,{
@@ -245,7 +251,6 @@ async function changeStatus(id, newStatus){
     alert("❌ อัปเดตไม่สำเร็จ");
   }
 }
-window.changeStatus = changeStatus;
 
 
 /* ✅ LOAD DATA */
@@ -255,7 +260,7 @@ function loadData(filter="ทั้งหมด"){
   onSnapshot(q, (snap)=>{
 
     let html="";
-    const keyword = searchBox.value.toLowerCase();
+    const keyword = document.getElementById("searchBox").value.toLowerCase();
 
     snap.forEach(docSnap=>{
       const d = docSnap.data();
@@ -291,59 +296,13 @@ function loadData(filter="ทั้งหมด"){
       </tr>`;
     });
 
-    tbody.innerHTML = html;
+    document.querySelector("#docTable tbody").innerHTML = html;
   });
 }
 loadData();
 
 
-searchBox.addEventListener("input", ()=> loadData());
-
-/* ✅ EXPORT */
-exportBtn.addEventListener("click", async()=>{
-
-  const snap = await getDocs(query(docsCol,orderBy("createdAt","desc")));
-  let rows=[];
-
-  snap.forEach(docSnap=>{
-    let d = docSnap.data();
-
-    let history = "-";
-    if(d.statusHistory){
-      history = d.statusHistory
-        .map(x=>`${x.status} (${x.updatedAt?.toDate?.().toLocaleString("th-TH") ?? "-"})`)
-        .join("\n");
-    }
-
-    rows.push({
-      เลขรับ: d.refno,
-      วันที่รับ: d.date,
-      เวลา: d.time,
-      เรื่อง: d.subject,
-      ผู้เสนอ: d.from,
-      ความด่วน: d.urgency,
-      ชั้นความลับ: d.secret,
-      สถานะ: d.status,
-      ประวัติสถานะ: history,
-      บันทึกเมื่อ: d.createdAt?.toDate?.().toLocaleString("th-TH") ?? "-"
-    });
-  });
-
-  let wb = XLSX.utils.book_new();
-  let ws = XLSX.utils.json_to_sheet(rows);
-  XLSX.utils.book_append_sheet(wb,ws,"incoming_docs");
-  XLSX.writeFile(wb,"incoming_docs.xlsx");
-
-  alert("✅ Export สำเร็จ");
-});
-
-
-/* ✅ Filter Button */
-filterAll.onclick     = ()=> loadData("ทั้งหมด");
-filterWait.onclick    = ()=> loadData("รอเสนอ");
-filterPending.onclick = ()=> loadData("รอเซ็น");
-filterSigned.onclick  = ()=> loadData("เซ็นแล้ว");
-filterReturn.onclick  = ()=> loadData("ส่งคืนแก้ไข");
+document.getElementById("searchBox").addEventListener("input", ()=> loadData());
 
 </script>
 
