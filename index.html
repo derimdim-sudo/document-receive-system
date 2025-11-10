@@ -17,12 +17,21 @@
   input:focus,select:focus {border-color:#0d6efd;box-shadow:0 0 5px rgba(13,110,253,0.3)}
   button {padding:10px;background:#0d6efd;border:none;color:#fff;border-radius:10px;font-size:15px;cursor:pointer}
   button:hover {background:#0a58ca}
-  table {width:100%;border-collapse:collapse;margin-top:18px}
-  th {background:#e5f1ff;padding:9px;font-size:14px}
+  table {width:100%;border-collapse:collapse;}
+  th {background:#e5f1ff;padding:9px;font-size:14px;position:sticky;top:0}
   td {padding:8px;font-size:14px;border-bottom:1px solid #e7e7e7}
   tr:nth-child(even){background:#f8fbff}
   .filter-row {display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:16px 0}
   #dashboard {background:#f1f8ff;padding:14px;border-radius:12px;margin-top:20px;border:1px solid #cfe2ff}
+
+  /* ✅ scroll table */
+  .table-wrapper{
+    max-height: 500px;
+    overflow-y: auto;
+    border-radius: 10px;
+    border:1px solid #ddd;
+    margin-top: 18px;
+  }
 </style>
 </head>
 
@@ -101,24 +110,27 @@
     <button id="filterReturn">ส่งคืนแก้ไข</button>
   </div>
 
-  <table id="docTable">
-    <thead>
-      <tr>
-        <th>เลขรับ</th>
-        <th>วันที่รับ</th>
-        <th>เวลา</th>
-        <th>เรื่อง</th>
-        <th>ความด่วน</th>
-        <th>ชั้นความลับ</th>
-        <th>ผู้เสนอ</th>
-        <th>หมายเหตุ</th>
-        <th>สถานะ</th>
-        <th>บันทึกเมื่อ</th>
-        <th>จัดการ</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
+  <!-- ✅ make scroll table -->
+  <div class="table-wrapper">
+    <table id="docTable">
+      <thead>
+        <tr>
+          <th>เลขรับ</th>
+          <th>วันที่รับ</th>
+          <th>เวลา</th>
+          <th>เรื่อง</th>
+          <th>ความด่วน</th>
+          <th>ชั้นความลับ</th>
+          <th>ผู้เสนอ</th>
+          <th>หมายเหตุ</th>
+          <th>สถานะ</th>
+          <th>บันทึกเมื่อ</th>
+          <th>จัดการ</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
 
   <button id="exportBtn" style="margin-top:16px">📤 Export Excel</button>
 
@@ -152,7 +164,6 @@ import {
 
 import * as XLSX from "https://cdn.sheetjs.com/xlsx-latest/package/xlsx.mjs";
 
-/* ✅ init */
 const app = initializeApp(firebaseConfig);
 const db  = getFirestore(app);
 const docsCol = collection(db, "incoming_docs_real");
@@ -185,6 +196,15 @@ async function generateRefNo(){
   }
 
   return String(next).padStart(3,"0")+"/"+yearTH+"-"+randomSuffix(4);
+}
+
+
+/* ✅ reset form */
+function resetForm() {
+  document.getElementById("docForm").reset();
+  const now = new Date();
+  document.getElementById("date").value = now.toISOString().slice(0,10);
+  document.getElementById("time").value = now.toTimeString().slice(0,5);
 }
 
 
@@ -226,6 +246,7 @@ document.getElementById("saveBtn").addEventListener("click", async()=>{
     }
 
     alert("✅ บันทึกสำเร็จ");
+    resetForm();   // ✅เคลียร์
   }
   catch(e){
     console.error(e);
@@ -236,7 +257,7 @@ document.getElementById("saveBtn").addEventListener("click", async()=>{
 
 /* ✅ CHANGE STATUS */
 window.changeStatus = async function(id, newStatus){
-  const ref = doc(db, "incoming_docs_real", id);   // ✅ FIX
+  const ref = doc(db, "incoming_docs_real", id);
   try {
     await updateDoc(ref,{
       status:newStatus,
@@ -300,9 +321,49 @@ function loadData(filter="ทั้งหมด"){
   });
 }
 loadData();
+resetForm();
 
 
 document.getElementById("searchBox").addEventListener("input", ()=> loadData());
+
+
+/* ✅ EXPORT */  
+document.getElementById("exportBtn").addEventListener("click", async()=>{
+
+  const snap = await getDocs(query(docsCol, orderBy("createdAt","desc")));
+  let rows=[];
+
+  snap.forEach(docSnap=>{
+    let d = docSnap.data();
+
+    let history = "-";
+    if(d.statusHistory){
+      history = d.statusHistory
+        .map(x=>`${x.status} (${x.updatedAt?.toDate?.().toLocaleString("th-TH") ?? "-"})`)
+        .join("\n");
+    }
+
+    rows.push({
+      เลขรับ: d.refno,
+      วันที่รับ: d.date,
+      เวลา: d.time,
+      เรื่อง: d.subject,
+      ผู้เสนอ: d.from,
+      ความด่วน: d.urgency,
+      ชั้นความลับ: d.secret,
+      สถานะ: d.status,
+      ประวัติสถานะ: history,
+      บันทึกเมื่อ: d.createdAt?.toDate?.().toLocaleString("th-TH") ?? "-"
+    });
+  });
+
+  let wb = XLSX.utils.book_new();
+  let ws = XLSX.utils.json_to_sheet(rows);
+  XLSX.utils.book_append_sheet(wb,ws,"incoming_docs_real");
+  XLSX.writeFile(wb,"incoming_docs_real.xlsx");
+
+  alert("✅ Export สำเร็จ");
+});
 
 </script>
 
