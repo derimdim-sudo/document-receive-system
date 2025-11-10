@@ -21,10 +21,9 @@
   th {background:#e5f1ff;padding:9px;font-size:14px;position:sticky;top:0}
   td {padding:8px;font-size:14px;border-bottom:1px solid #e7e7e7}
   tr:nth-child(even){background:#f8fbff}
-  .filter-row {display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:16px 0}
+  .filter-row {display:flex;gap:8px;margin:16px 0;flex-wrap:wrap}
   #dashboard {background:#f1f8ff;padding:14px;border-radius:12px;margin-top:20px;border:1px solid #cfe2ff}
 
-  /* ✅ scroll table */
   .table-wrapper{
     max-height: 500px;
     overflow-y: auto;
@@ -90,6 +89,18 @@
       </div>
     </div>
 
+    <label>ส่วน/ฝ่าย</label>
+    <select id="department">
+      <option value="">— เลือกส่วน/ฝ่าย —</option>
+      <option value="ส่วนทัณฑปฏิบัติ">ส่วนทัณฑปฏิบัติ</option>
+      <option value="ส่วนปกครอง">ส่วนปกครอง</option>
+      <option value="ส่วนรักษาการณ์">ส่วนรักษาการณ์</option>
+      <option value="ส่วนสวัสดิการและสงเคราะห์ผู้ต้องขัง">ส่วนสวัสดิการและสงเคราะห์ผู้ต้องขัง</option>
+      <option value="ส่วนพัฒนาผู้ต้องขัง 1">ส่วนพัฒนาผู้ต้องขัง 1</option>
+      <option value="ส่วนพัฒนาผู้ต้องขัง 2">ส่วนพัฒนาผู้ต้องขัง 2</option>
+      <option value="ฝ่ายบริหาร">ฝ่ายบริหาร</option>
+    </select>
+
     <label>เรื่อง</label>
     <input type="text" id="subject" />
 
@@ -100,7 +111,7 @@
 
   </form>
 
-  <input type="text" id="searchBox" placeholder="🔎 ค้นหา (เลขรับ / เรื่อง / ผู้เสนอ)" style="width:100%;margin-top:18px"/>
+  <input type="text" id="searchBox" placeholder="🔎 ค้นหา (เลขรับ / เรื่อง / ผู้เสนอ / ส่วน/ฝ่าย)" style="width:100%;margin-top:18px"/>
 
   <div class="filter-row">
     <button id="filterAll">ทั้งหมด</button>
@@ -108,9 +119,20 @@
     <button id="filterPending">รอเซ็น</button>
     <button id="filterSigned">เซ็นแล้ว</button>
     <button id="filterReturn">ส่งคืนแก้ไข</button>
+
+    <!-- ✅ filter department -->
+    <select id="filterDept">
+      <option value="">— เลือกส่วน/ฝ่าย —</option>
+      <option value="ส่วนทัณฑปฏิบัติ">ส่วนทัณฑปฏิบัติ</option>
+      <option value="ส่วนปกครอง">ส่วนปกครอง</option>
+      <option value="ส่วนรักษาการณ์">ส่วนรักษาการณ์</option>
+      <option value="ส่วนสวัสดิการและสงเคราะห์ผู้ต้องขัง">ส่วนสวัสดิการและสงเคราะห์ผู้ต้องขัง</option>
+      <option value="ส่วนพัฒนาผู้ต้องขัง 1">ส่วนพัฒนาผู้ต้องขัง 1</option>
+      <option value="ส่วนพัฒนาผู้ต้องขัง 2">ส่วนพัฒนาผู้ต้องขัง 2</option>
+      <option value="ฝ่ายบริหาร">ฝ่ายบริหาร</option>
+    </select>
   </div>
 
-  <!-- ✅ make scroll table -->
   <div class="table-wrapper">
     <table id="docTable">
       <thead>
@@ -118,6 +140,7 @@
           <th>เลขรับ</th>
           <th>วันที่รับ</th>
           <th>เวลา</th>
+          <th>ส่วน/ฝ่าย</th>
           <th>เรื่อง</th>
           <th>ความด่วน</th>
           <th>ชั้นความลับ</th>
@@ -134,14 +157,7 @@
 
   <button id="exportBtn" style="margin-top:16px">📤 Export Excel</button>
 
-  <div id="dashboard">
-    <h3>Dashboard (รายวัน / รายเดือน)</h3>
-    <p id="dailyCount">รายวัน: -</p>
-    <p id="monthlyCount">รายเดือน: -</p>
-  </div>
-
 </main>
-
 
 <script type="module">
 
@@ -168,17 +184,12 @@ const app = initializeApp(firebaseConfig);
 const db  = getFirestore(app);
 const docsCol = collection(db, "incoming_docs_real");
 
-
-/* ✅ random suffix */
 function randomSuffix(len = 4) {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   let out = "";
-  for (let i = 0; i < len; i++) {
-    out += chars[Math.floor(Math.random() * chars.length)];
-  }
+  for (let i = 0; i < len; i++) out += chars[Math.floor(Math.random()*chars.length)];
   return out;
 }
-
 
 /* ✅ Running Number */
 async function generateRefNo(){
@@ -186,125 +197,105 @@ async function generateRefNo(){
   const qLast = query(docsCol, orderBy("refno","desc"), limit(1));
   const snap = await getDocs(qLast);
   let next=1;
-
   if(!snap.empty){
     const last = snap.docs[0].data().refno || "";
     const [seq,y] = (last+"").split("/");
-    if(parseInt(y)===yearTH){
-      next = (parseInt(seq)||0)+1;
-    }
+    if(parseInt(y)===yearTH){ next = (parseInt(seq)||0)+1; }
   }
-
   return String(next).padStart(3,"0")+"/"+yearTH+"-"+randomSuffix(4);
 }
 
-
 /* ✅ reset form */
-function resetForm() {
+function resetForm(){
   document.getElementById("docForm").reset();
   const now = new Date();
   document.getElementById("date").value = now.toISOString().slice(0,10);
   document.getElementById("time").value = now.toTimeString().slice(0,5);
 }
 
-
 /* ✅ Save */
-document.getElementById("saveBtn").addEventListener("click", async()=>{
-
-  const date    = document.getElementById("date").value;
-  const time    = document.getElementById("time").value;
-  const subject = document.getElementById("subject").value.trim();
-  const urgency = document.getElementById("urgency").value;
-  const secret  = document.getElementById("secret").value;
-  const from    = document.getElementById("from").value.trim();
-  const note    = document.getElementById("note").value.trim();
+document.getElementById("saveBtn").onclick = async ()=>{
+  const date = date.value;
+  const time = time.value;
+  const subject = subject.value.trim();
+  const from = from.value.trim();
+  const department = document.getElementById("department").value;
+  const urgency = urgency.value;
+  const secret  = secret.value;
+  const note    = note.value.trim();
 
   if(!date || !time || !subject || !from){
     alert("กรุณากรอก วันที่ / เวลา / เรื่อง / ผู้เสนอ");
     return;
   }
 
-  try {
+  try{
     const refno = await generateRefNo();
-
     const docRef = await addDoc(docsCol,{
-      refno, date, time, subject, urgency, secret, from, note,
+      refno, date, time, subject, urgency, secret, from, department, note,
       status:"รอเสนอ",
       createdAt: serverTimestamp(),
-      statusHistory: []
+      statusHistory:[]
     });
 
-    try {
-      await updateDoc(docRef,{
-        statusHistory: arrayUnion({
-          status: "รอเสนอ",
-          updatedAt: Timestamp.now()
-        })
-      });
-    } catch(err){
-      console.log("⚠️ update history fail: ", err);
-    }
+    await updateDoc(docRef,{
+      statusHistory: arrayUnion({status:"รอเสนอ",updatedAt:Timestamp.now()})
+    });
 
     alert("✅ บันทึกสำเร็จ");
-    resetForm();   // ✅เคลียร์
-  }
-  catch(e){
+    resetForm();
+  }catch(e){
     console.error(e);
     alert("❌ บันทึกไม่สำเร็จ");
   }
-});
+};
 
-
-/* ✅ CHANGE STATUS */
-window.changeStatus = async function(id, newStatus){
-  const ref = doc(db, "incoming_docs_real", id);
-  try {
+/* ✅ update status */
+window.changeStatus = async (id,newStatus)=>{
+  try{
+    const ref = doc(db,"incoming_docs_real",id);
     await updateDoc(ref,{
       status:newStatus,
-      statusHistory: arrayUnion({
-        status: newStatus,
-        updatedAt: Timestamp.now()
-      })
+      statusHistory: arrayUnion({status:newStatus,updatedAt:Timestamp.now()})
     });
-    alert("✅ อัปเดตสถานะแล้ว");
+    alert("✅ อัปเดตแล้ว");
   }catch(e){
-    console.error(e);
     alert("❌ อัปเดตไม่สำเร็จ");
   }
-}
+};
 
+let currentFilterStatus="ทั้งหมด";
+let currentFilterDept="";
 
 /* ✅ LOAD DATA */
-function loadData(filter="ทั้งหมด"){
+function loadData(){
   const q = query(docsCol, orderBy("createdAt","desc"));
-
-  onSnapshot(q, (snap)=>{
-
+  onSnapshot(q,(snap)=>{
     let html="";
     const keyword = document.getElementById("searchBox").value.toLowerCase();
 
     snap.forEach(docSnap=>{
       const d = docSnap.data();
 
-      if(filter!=="ทั้งหมด" && d.status!==filter) return;
+      if(currentFilterStatus!=="ทั้งหมด" && d.status!==currentFilterStatus) return;
+      if(currentFilterDept && d.department!==currentFilterDept) return;
 
-      if(keyword){
-        const text = `${d.refno} ${d.subject} ${d.from} ${d.note}`.toLowerCase();
-        if(!text.includes(keyword)) return;
-      }
+      const allText = `${d.refno} ${d.subject} ${d.from} ${d.note} ${d.department}`.toLowerCase();
+      if(keyword && !allText.includes(keyword)) return;
 
       html += `
       <tr>
         <td>${d.refno}</td>
         <td>${d.date}</td>
         <td>${d.time}</td>
+        <td>${d.department??"-"}</td>
         <td>${d.subject}</td>
         <td>${d.urgency}</td>
         <td>${d.secret}</td>
         <td>${d.from}</td>
         <td>${d.note}</td>
         <td>${d.status}</td>
-        <td>${d.createdAt?.toDate ? d.createdAt.toDate().toLocaleString("th-TH") : "-"}</td>
+        <td>${d.createdAt?.toDate? d.createdAt.toDate().toLocaleString("th-TH"):"-"}</td>
         <td>
           <select onchange="changeStatus('${docSnap.id}', this.value)">
             <option value="">เลือก</option>
@@ -314,58 +305,62 @@ function loadData(filter="ทั้งหมด"){
             <option value="ส่งคืนแก้ไข">ส่งคืนแก้ไข</option>
           </select>
         </td>
-      </tr>`;
+      </tr>
+      `;
     });
-
     document.querySelector("#docTable tbody").innerHTML = html;
   });
 }
 loadData();
-resetForm();
 
+/* ✅ Filter event */
+document.getElementById("filterAll").onclick    = ()=>{currentFilterStatus="ทั้งหมด";loadData();};
+document.getElementById("filterWait").onclick   = ()=>{currentFilterStatus="รอเสนอ";loadData();};
+document.getElementById("filterPending").onclick= ()=>{currentFilterStatus="รอเซ็น";loadData();};
+document.getElementById("filterSigned").onclick = ()=>{currentFilterStatus="เซ็นแล้ว";loadData();};
+document.getElementById("filterReturn").onclick = ()=>{currentFilterStatus="ส่งคืนแก้ไข";loadData();};
 
-document.getElementById("searchBox").addEventListener("input", ()=> loadData());
+document.getElementById("filterDept").onchange = (e)=>{
+  currentFilterDept = e.target.value;
+  loadData();
+};
 
+document.getElementById("searchBox").oninput = ()=> loadData();
 
-/* ✅ EXPORT */  
-document.getElementById("exportBtn").addEventListener("click", async()=>{
-
+/* ✅ EXPORT */
+document.getElementById("exportBtn").onclick = async ()=>{
   const snap = await getDocs(query(docsCol, orderBy("createdAt","desc")));
   let rows=[];
-
   snap.forEach(docSnap=>{
-    let d = docSnap.data();
-
-    let history = "-";
+    const d=docSnap.data();
+    let history="-";
     if(d.statusHistory){
       history = d.statusHistory
-        .map(x=>`${x.status} (${x.updatedAt?.toDate?.().toLocaleString("th-TH") ?? "-"})`)
-        .join("\n");
+      .map(x=>`${x.status} (${x.updatedAt?.toDate?.().toLocaleString("th-TH")??"-"})`)
+      .join("\n");
     }
-
     rows.push({
-      เลขรับ: d.refno,
-      วันที่รับ: d.date,
-      เวลา: d.time,
-      เรื่อง: d.subject,
-      ผู้เสนอ: d.from,
-      ความด่วน: d.urgency,
-      ชั้นความลับ: d.secret,
-      สถานะ: d.status,
-      ประวัติสถานะ: history,
-      บันทึกเมื่อ: d.createdAt?.toDate?.().toLocaleString("th-TH") ?? "-"
+      เลขรับ:d.refno,
+      วันที่รับ:d.date,
+      เวลา:d.time,
+      ส่วนฝ่าย: d.department??"-",
+      เรื่อง:d.subject,
+      ผู้เสนอ:d.from,
+      ความด่วน:d.urgency,
+      ชั้นความลับ:d.secret,
+      สถานะ:d.status,
+      ประวัติสถานะ:history,
+      บันทึกเมื่อ:d.createdAt?.toDate?.().toLocaleString("th-TH")??"-"
     });
   });
-
-  let wb = XLSX.utils.book_new();
-  let ws = XLSX.utils.json_to_sheet(rows);
+  let wb=XLSX.utils.book_new();
+  let ws=XLSX.utils.json_to_sheet(rows);
   XLSX.utils.book_append_sheet(wb,ws,"incoming_docs_real");
   XLSX.writeFile(wb,"incoming_docs_real.xlsx");
-
   alert("✅ Export สำเร็จ");
-});
+};
+resetForm();
 
 </script>
-
 </body>
 </html>
