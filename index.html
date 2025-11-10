@@ -236,7 +236,7 @@ document.getElementById("saveBtn").addEventListener("click", async()=>{
 
 /* ✅ CHANGE STATUS */
 window.changeStatus = async function(id, newStatus){
-  const ref = doc(db, "incoming_docs", id);
+  const ref = doc(db, "incoming_docs_real", id);   // ✅ FIX
   try {
     await updateDoc(ref,{
       status:newStatus,
