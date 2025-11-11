@@ -110,7 +110,11 @@
 
   </form>
 
-  <input type="text" id="searchBox" placeholder="🔎 ค้นหา (เลขรับ / เรื่อง / ผู้เสนอ / ส่วน/ฝ่าย)" style="width:100%;margin-top:18px"/>
+
+  <input type="text" id="searchBox"
+    placeholder="🔎 ค้นหา (เลขรับ / เรื่อง / ผู้เสนอ / ส่วน/ฝ่าย)"
+    style="width:100%;margin-top:18px"
+  />
 
   <div class="filter-row">
     <button id="filterAll">ทั้งหมด</button>
@@ -181,28 +185,28 @@ import * as XLSX from "https://cdn.sheetjs.com/xlsx-latest/package/xlsx.mjs";
 const app = initializeApp(firebaseConfig);
 const db  = getFirestore(app);
 const docsCol = collection(db, "incoming_docs_real");
-
 /* ✅ Running Number (transaction) */
 async function generateRefNo(){
-  const yearTH = new Date().getFullYear()+543;
-  const counterRef = doc(db,"counters","refCounter");
+  const yearTH = new Date().getFullYear() + 543;
+  const counterRef = doc(db, "counters", "refCounter");
 
-  return await runTransaction(db, async (tx)=>{
+  return await runTransaction(db, async (tx) => {
     const snap = await tx.get(counterRef);
     let seq = 1;
 
-    if(!snap.exists()){
-      tx.set(counterRef,{ year:yearTH, seq:1 });
-    }else{
-      const data=snap.data();
-      if(data.year !== yearTH){
-        tx.update(counterRef,{ year:yearTH, seq:1 });
-      }else{
-        seq = (data.seq||0)+1;
-        tx.update(counterRef,{ seq });
+    if (!snap.exists()) {
+      tx.set(counterRef, { year: yearTH, seq: 1 });
+    } else {
+      const data = snap.data();
+      if (data.year !== yearTH) {
+        tx.update(counterRef, { year: yearTH, seq: 1 });
+      } else {
+        seq = (data.seq || 0) + 1;
+        tx.update(counterRef, { seq });
       }
     }
-    return String(seq).padStart(3,"0")+"/"+yearTH;
+
+    return String(seq).padStart(3,"0") + "/" + yearTH;
   });
 }
 
@@ -361,6 +365,7 @@ document.getElementById("exportBtn").onclick = async ()=>{
   XLSX.writeFile(wb,"incoming_docs_real.xlsx");
   alert("✅ Export สำเร็จ");
 };
+
 resetForm();
 
 </script>
