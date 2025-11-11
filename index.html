@@ -22,14 +22,13 @@
   td {padding:8px;font-size:14px;border-bottom:1px solid #e7e7e7}
   tr:nth-child(even){background:#f8fbff}
   .filter-row {display:flex;gap:8px;margin:16px 0;flex-wrap:wrap}
-  #dashboard {background:#f1f8ff;padding:14px;border-radius:12px;margin-top:20px;border:1px solid #cfe2ff}
 
   .table-wrapper{
-    max-height: 500px;
-    overflow-y: auto;
-    border-radius: 10px;
+    max-height:500px;
+    overflow-y:auto;
+    border-radius:10px;
     border:1px solid #ddd;
-    margin-top: 18px;
+    margin-top:18px;
   }
 </style>
 </head>
@@ -92,13 +91,13 @@
     <label>ส่วน/ฝ่าย</label>
     <select id="department">
       <option value="">— เลือกส่วน/ฝ่าย —</option>
-      <option value="ส่วนทัณฑปฏิบัติ">ส่วนทัณฑปฏิบัติ</option>
-      <option value="ส่วนปกครอง">ส่วนปกครอง</option>
-      <option value="ส่วนรักษาการณ์">ส่วนรักษาการณ์</option>
-      <option value="ส่วนสวัสดิการและสงเคราะห์ผู้ต้องขัง">ส่วนสวัสดิการและสงเคราะห์ผู้ต้องขัง</option>
-      <option value="ส่วนพัฒนาผู้ต้องขัง 1">ส่วนพัฒนาผู้ต้องขัง 1</option>
-      <option value="ส่วนพัฒนาผู้ต้องขัง 2">ส่วนพัฒนาผู้ต้องขัง 2</option>
-      <option value="ฝ่ายบริหาร">ฝ่ายบริหาร</option>
+      <option>ส่วนทัณฑปฏิบัติ</option>
+      <option>ส่วนปกครอง</option>
+      <option>ส่วนรักษาการณ์</option>
+      <option>ส่วนสวัสดิการและสงเคราะห์ผู้ต้องขัง</option>
+      <option>ส่วนพัฒนาผู้ต้องขัง 1</option>
+      <option>ส่วนพัฒนาผู้ต้องขัง 2</option>
+      <option>ฝ่ายบริหาร</option>
     </select>
 
     <label>เรื่อง</label>
@@ -120,16 +119,15 @@
     <button id="filterSigned">เซ็นแล้ว</button>
     <button id="filterReturn">ส่งคืนแก้ไข</button>
 
-    <!-- ✅ filter department -->
     <select id="filterDept">
       <option value="">— เลือกส่วน/ฝ่าย —</option>
-      <option value="ส่วนทัณฑปฏิบัติ">ส่วนทัณฑปฏิบัติ</option>
-      <option value="ส่วนปกครอง">ส่วนปกครอง</option>
-      <option value="ส่วนรักษาการณ์">ส่วนรักษาการณ์</option>
-      <option value="ส่วนสวัสดิการและสงเคราะห์ผู้ต้องขัง">ส่วนสวัสดิการและสงเคราะห์ผู้ต้องขัง</option>
-      <option value="ส่วนพัฒนาผู้ต้องขัง 1">ส่วนพัฒนาผู้ต้องขัง 1</option>
-      <option value="ส่วนพัฒนาผู้ต้องขัง 2">ส่วนพัฒนาผู้ต้องขัง 2</option>
-      <option value="ฝ่ายบริหาร">ฝ่ายบริหาร</option>
+      <option>ส่วนทัณฑปฏิบัติ</option>
+      <option>ส่วนปกครอง</option>
+      <option>ส่วนรักษาการณ์</option>
+      <option>ส่วนสวัสดิการและสงเคราะห์ผู้ต้องขัง</option>
+      <option>ส่วนพัฒนาผู้ต้องขัง 1</option>
+      <option>ส่วนพัฒนาผู้ต้องขัง 2</option>
+      <option>ฝ่ายบริหาร</option>
     </select>
   </div>
 
@@ -174,8 +172,8 @@ const firebaseConfig = {
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
 import {
   getFirestore, collection, addDoc, serverTimestamp, Timestamp,
-  query, orderBy, onSnapshot, getDocs, updateDoc,
-  doc, arrayUnion, limit
+  query, orderBy, onSnapshot, getDocs, updateDoc, doc,
+  arrayUnion, limit, runTransaction
 } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
 
 import * as XLSX from "https://cdn.sheetjs.com/xlsx-latest/package/xlsx.mjs";
@@ -184,25 +182,28 @@ const app = initializeApp(firebaseConfig);
 const db  = getFirestore(app);
 const docsCol = collection(db, "incoming_docs_real");
 
-function randomSuffix(len = 4) {
-  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  let out = "";
-  for (let i = 0; i < len; i++) out += chars[Math.floor(Math.random()*chars.length)];
-  return out;
-}
-
-/* ✅ Running Number */
+/* ✅ Running Number (transaction) */
 async function generateRefNo(){
   const yearTH = new Date().getFullYear()+543;
-  const qLast = query(docsCol, orderBy("refno","desc"), limit(1));
-  const snap = await getDocs(qLast);
-  let next=1;
-  if(!snap.empty){
-    const last = snap.docs[0].data().refno || "";
-    const [seq,y] = (last+"").split("/");
-    if(parseInt(y)===yearTH){ next = (parseInt(seq)||0)+1; }
-  }
-  return String(next).padStart(3,"0")+"/"+yearTH+"-"+randomSuffix(4);
+  const counterRef = doc(db,"counters","refCounter");
+
+  return await runTransaction(db, async (tx)=>{
+    const snap = await tx.get(counterRef);
+    let seq = 1;
+
+    if(!snap.exists()){
+      tx.set(counterRef,{ year:yearTH, seq:1 });
+    }else{
+      const data=snap.data();
+      if(data.year !== yearTH){
+        tx.update(counterRef,{ year:yearTH, seq:1 });
+      }else{
+        seq = (data.seq||0)+1;
+        tx.update(counterRef,{ seq });
+      }
+    }
+    return String(seq).padStart(3,"0")+"/"+yearTH;
+  });
 }
 
 /* ✅ reset form */
@@ -215,14 +216,14 @@ function resetForm(){
 
 /* ✅ Save */
 document.getElementById("saveBtn").onclick = async ()=>{
-  const date = date.value;
-  const time = time.value;
-  const subject = subject.value.trim();
-  const from = from.value.trim();
+  const date = document.getElementById("date").value;
+  const time = document.getElementById("time").value;
+  const subject = document.getElementById("subject").value.trim();
+  const from = document.getElementById("from").value.trim();
   const department = document.getElementById("department").value;
-  const urgency = urgency.value;
-  const secret  = secret.value;
-  const note    = note.value.trim();
+  const urgency = document.getElementById("urgency").value;
+  const secret  = document.getElementById("secret").value;
+  const note    = document.getElementById("note").value.trim();
 
   if(!date || !time || !subject || !from){
     alert("กรุณากรอก วันที่ / เวลา / เรื่อง / ผู้เสนอ");
@@ -232,7 +233,8 @@ document.getElementById("saveBtn").onclick = async ()=>{
   try{
     const refno = await generateRefNo();
     const docRef = await addDoc(docsCol,{
-      refno, date, time, subject, urgency, secret, from, department, note,
+      refno, date, time, subject, urgency, secret, from,
+      department, note,
       status:"รอเสนอ",
       createdAt: serverTimestamp(),
       statusHistory:[]
