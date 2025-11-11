@@ -185,10 +185,11 @@ import * as XLSX from "https://cdn.sheetjs.com/xlsx-latest/package/xlsx.mjs";
 const app = initializeApp(firebaseConfig);
 const db  = getFirestore(app);
 const docsCol = collection(db, "incoming_docs_real");
-/* ✅ Running Number (transaction) */
+
+/* ✅ Running Number (transaction) — FIXED PATH */
 async function generateRefNo(){
   const yearTH = new Date().getFullYear() + 543;
-  const counterRef = doc(db, "counters", "refCounter");
+  const counterRef = doc(db, "incoming_meta", "refCounter");   // ✅ FIXED
 
   return await runTransaction(db, async (tx) => {
     const snap = await tx.get(counterRef);
