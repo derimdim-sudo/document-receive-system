@@ -97,6 +97,7 @@
       <option>ส่วนสวัสดิการและสงเคราะห์ผู้ต้องขัง</option>
       <option>ส่วนพัฒนาผู้ต้องขัง 1</option>
       <option>ส่วนพัฒนาผู้ต้องขัง 2</option>
+      <option>ส่วนสถานพยาบาล</option>   <!-- ✅ เพิ่ม -->
       <option>ฝ่ายบริหาร</option>
     </select>
 
@@ -124,17 +125,16 @@
     <button id="filterReturn">ส่งคืนแก้ไข</button>
 
     <select id="filterDept">
-  <option value="">— เลือกส่วน/ฝ่าย —</option>
-  <option>ส่วนทัณฑปฏิบัติ</option>
-  <option>ส่วนปกครอง</option>
-  <option>ส่วนรักษาการณ์</option>
-  <option>ส่วนสวัสดิการและสงเคราะห์ผู้ต้องขัง</option>
-  <option>ส่วนพัฒนาผู้ต้องขัง 1</option>
-  <option>ส่วนพัฒนาผู้ต้องขัง 2</option>
-  <option>ส่วนสถานพยาบาล</option>   <!-- ✅ เพิ่ม -->
-  <option>ฝ่ายบริหาร</option>
-</select>
-
+      <option value="">— เลือกส่วน/ฝ่าย —</option>
+      <option>ส่วนทัณฑปฏิบัติ</option>
+      <option>ส่วนปกครอง</option>
+      <option>ส่วนรักษาการณ์</option>
+      <option>ส่วนสวัสดิการและสงเคราะห์ผู้ต้องขัง</option>
+      <option>ส่วนพัฒนาผู้ต้องขัง 1</option>
+      <option>ส่วนพัฒนาผู้ต้องขัง 2</option>
+      <option>ส่วนสถานพยาบาล</option>   <!-- ✅ เพิ่ม -->
+      <option>ฝ่ายบริหาร</option>
+    </select>
   </div>
 
   <div class="table-wrapper">
@@ -160,9 +160,6 @@
   </div>
 
   <button id="exportBtn" style="margin-top:16px">📤 Export Excel</button>
-
-</main>
-
 <script type="module">
 
 /* ✅ Firebase Config */
@@ -188,10 +185,10 @@ const app = initializeApp(firebaseConfig);
 const db  = getFirestore(app);
 const docsCol = collection(db, "incoming_docs_real");
 
-/* ✅ Running Number (transaction) — FIXED PATH */
+/* ✅ Running Number (transaction) — SAFE */
 async function generateRefNo(){
   const yearTH = new Date().getFullYear() + 543;
-  const counterRef = doc(db, "incoming_meta", "refCounter");   // ✅ FIXED
+  const counterRef = doc(db, "incoming_meta", "refCounter");
 
   return await runTransaction(db, async (tx) => {
     const snap = await tx.get(counterRef);
@@ -314,9 +311,9 @@ function loadData(){
             <option value="ส่งคืนแก้ไข">ส่งคืนแก้ไข</option>
           </select>
         </td>
-      </tr>
-      `;
+      </tr>`;
     });
+
     document.querySelector("#docTable tbody").innerHTML = html;
   });
 }
