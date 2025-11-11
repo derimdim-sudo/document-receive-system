@@ -1,1 +1,199 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Dashboard ผู้บริหาร — Incoming Doc</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet" />
+
+<style>
+  body {font-family:"Prompt",sans-serif;background:#eef4ff;margin:0}
+  header {background:#0d6efd;color:#fff;padding:18px;font-size:22px;font-weight:600;text-align:center}
+  main {max-width:1100px;background:#fff;margin:25px auto;padding:28px;border-radius:14px;box-shadow:0 6px 20px rgba(0,0,0,0.08)}
+
+  h3 {margin-top:25px;color:#0d3a7a;}
+
+  .card {
+    padding:18px;
+    background:#f7faff;
+    border-radius:12px;
+    border:1px solid #d9e6ff;
+    margin-bottom:16px;
+    display:flex;
+    justify-content:space-between;
+    font-size:18px;
+  }
+
+  table {width:100%;border-collapse:collapse;margin-top:20px}
+  th {background:#e5f1ff;padding:9px;font-size:14px;position:sticky;top:0}
+  td {padding:8px;font-size:14px;border-bottom:1px solid #e7e7e7}
+  tr:nth-child(even){background:#f8fbff}
+
+  .table-wrapper{
+    max-height:500px;
+    overflow-y:auto;
+    border-radius:10px;
+    border:1px solid #ddd;
+    margin-top:18px;
+  }
+</style>
+</head>
+
+<body>
+
+<header>
+📊 Dashboard ผู้บริหาร — รายวัน
+</header>
+
+<main>
+
+  <div id="reportDate" style="font-size:18px;font-weight:500;margin-bottom:10px;"></div>
+
+  <div class="card">
+    <div>📁 รับวันนี้</div>
+    <div id="countToday">–</div>
+  </div>
+
+  <div class="card">
+    <div>✅ เซ็นแล้ววันนี้</div>
+    <div id="countSigned">–</div>
+  </div>
+
+  <h3>📌 รายงานรวมตาม “ส่วน/ฝ่าย”</h3>
+  <canvas id="deptChart"></canvas>
+
+  <h3>📌 สรุปตามความด่วน</h3>
+  <canvas id="urgencyChart"></canvas>
+
+  <h3>📄 รายการวันนี้</h3>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>เลขรับ</th>
+          <th>เรื่อง</th>
+          <th>ส่วน/ฝ่าย</th>
+          <th>สถานะ</th>
+          <th>ความด่วน</th>
+        </tr>
+      </thead>
+      <tbody id="todayRows"></tbody>
+    </table>
+  </div>
+
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script type="module">
+
+/* ✅ Firebase Config */
+const firebaseConfig = {
+  apiKey: "AIzaSyDAYnOCUm4-QKlJGCLOGEGHsUf143K2swc",
+  authDomain: "doc-receive-v3.firebaseapp.com",
+  projectId: "doc-receive-v3",
+  storageBucket: "doc-receive-v3.firebasestorage.app",
+  messagingSenderId: "105318430473",
+  appId: "1:105318430473:web:0023244038de907be685d8"
+};
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
+import {
+  getFirestore, collection, query, getDocs, where, orderBy
+} from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+
+const app = initializeApp(firebaseConfig);
+const db  = getFirestore(app);
+const docsCol = collection(db, "incoming_docs_real");
+
+const today = new Date();
+const thDateStr = today.toLocaleDateString("th-TH");
+
+document.getElementById("reportDate").innerHTML = "📅 วันที่: " + thDateStr;
+
+const todayStr = today.toISOString().slice(0,10);
+
+/* ✅ Query เรียกเฉพาะวันนี้ */
+const q = query(
+  docsCol,
+  where("date", "==", todayStr),
+  orderBy("createdAt","desc")
+);
+
+const snap = await getDocs(q);
+
+/* ▼▼▼ Summary Variables ▼▼▼ */
+let countToday = 0;
+let countSigned = 0;
+
+let deptMap = {};
+let urgencyMap = {};
+
+let rowHTML = "";
+
+/* ✅ Loop ทำสรุป */
+snap.forEach(docSnap => {
+  const d = docSnap.data();
+  countToday++;
+
+  /* นับสถานะเซ็นแล้ว */
+  if(d.status === "เซ็นแล้ว") countSigned++;
+
+  /* นับตามส่วน/ฝ่าย */
+  const dept = d.department ?? "ไม่ระบุ";
+  deptMap[dept] = (deptMap[dept] ?? 0) + 1;
+
+  /* นับตามความด่วน */
+  const u = d.urgency ?? "ไม่ระบุ";
+  urgencyMap[u] = (urgencyMap[u] ?? 0) + 1;
+
+  rowHTML += `
+    <tr>
+      <td>${d.refno}</td>
+      <td>${d.subject}</td>
+      <td>${d.department ?? "-"}</td>
+      <td>${d.status}</td>
+      <td>${d.urgency}</td>
+    </tr>
+  `;
+});
+
+/* ✅ update text */
+document.getElementById("countToday").innerText  = countToday;
+document.getElementById("countSigned").innerText = countSigned;
+document.getElementById("todayRows").innerHTML   = rowHTML;
+
+/* ✅ สร้างกราฟ — ส่วน/ฝ่าย */
+new Chart(
+  document.getElementById("deptChart"),
+  {
+    type:"pie",
+    data:{
+      labels:Object.keys(deptMap),
+      datasets:[{
+        data:Object.values(deptMap)
+      }]
+    }
+  }
+);
+
+/* ✅ สร้างกราฟ — ความด่วน */
+new Chart(
+  document.getElementById("urgencyChart"),
+  {
+    type:"bar",
+    data:{
+      labels:Object.keys(urgencyMap),
+      datasets:[{
+        data:Object.values(urgencyMap)
+      }]
+    }
+  }
+);
+
+</script>
+
+</body>
+</html>
 
