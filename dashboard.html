@@ -1,150 +1,141 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Dashboard – ระบบรับหนังสือเสนอผู้อำนวยการ</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📊 Dashboard — ระบบรับหนังสือเสนอผู้อำนวยการ</title>
 
-<link rel="icon" type="image/png" href="favicon.png" />
-
-<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet" />
+<!-- ✅ Favicon -->
+<link rel="icon" type="image/png" href="./favicon.png">
 
 <style>
   body {
-    font-family:"Prompt",sans-serif;
-    background:#e9f2ff;
-    margin:0;
+    font-family: "Prompt","sans-serif";
+    background: #e9f2ff;
+    margin: 0;
   }
   header {
-    background:#0d6efd;
-    color:#fff;
-    padding:16px;
-    font-size:20px;
-    font-weight:600;
-    text-align:center;
+    background: #0d6efd;
+    color: #fff;
+    padding: 18px;
+    font-size: 22px;
+    font-weight: 600;
+    text-align: center;
   }
-
   main {
-    max-width:1100px;
-    background:#fff;
-    margin:25px auto;
-    padding:28px;
-    border-radius:14px;
-    box-shadow:0 6px 20px rgba(0,0,0,0.08)
+    max-width: 1100px;
+    margin: 18px auto;
+    background: #fff;
+    padding: 22px;
+    border-radius: 12px;
+    box-shadow: 0 4px 18px rgba(0,0,0,.08);
   }
-
   h2 {
-    margin-top:0;
-    border-left:6px solid #0d6efd;
-    padding-left:12px;
+    margin-top: 28px;
+    background: #eef7ff;
+    padding: 12px;
+    border-left: 5px solid #0d6efd;
   }
-
-  .count-box {
-    background:#e6f7e8;
-    padding:14px;
-    border-radius:10px;
-    border:1px solid #b6dfba;
-    color:#085f0a;
-    margin-bottom:18px;
-    font-size:18px;
-  }
-
   table {
-    width:100%;
-    border-collapse:collapse;
-    margin-top:8px;
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+  }
+  th, td {
+    border-bottom: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+    font-size: 14px;
   }
   th {
-    background:#e5f1ff;
-    padding:9px;
-    font-size:14px;
+    background: #e8f2ff;
   }
-  td {
-    padding:8px;
-    font-size:14px;
-    border-bottom:1px solid #e7e7e7;
+  .tag {
+    background: #0d6efd;
+    color: #fff;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 14px;
+    display: inline-block;
+    margin-top: 12px;
   }
-  tr:nth-child(even){
-    background:#f8fbff
+  button {
+    padding: 8px 14px;
+    background: #0d6efd;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
   }
-
-  .section {
-    margin-top:30px
+  button:hover {
+    background: #0a58ca;
   }
-
-  .date-filter{
-    margin:10px 0;
-    display:flex;
-    gap:8px;
-    align-items:center;
-  }
-  input[type="date"]{
-    padding:8px;
-    border:1px solid #cfd8e3;
-    border-radius:8px;
-  }
-  button{
-    padding:8px 14px;
-    background:#0d6efd;
-    color:#fff;
-    border:none;
-    border-radius:8px;
-    cursor:pointer;
-  }
-  button:hover{background:#0a58ca;}
 </style>
 </head>
 
 <body>
-
-<header>📊 Dashboard – ระบบรับหนังสือเสนอผู้อำนวยการ</header>
+<header>
+  📊 Dashboard — ระบบรับหนังสือเสนอผู้อำนวยการ
+</header>
 
 <main>
 
-  <div class="date-filter">
-    <label>เลือกวันที่:</label>
-    <input type="date" id="filterDate" />
-    <button onclick="loadData()">แสดงข้อมูล</button>
+  <!-- ✅ เลือกวันที่ -->
+  <div style="margin-bottom:18px;">
+    <label>เลือกวันที่: </label>
+    <input type="date" id="datePicker">
+    <button id="showBtn">แสดงข้อมูล</button>
   </div>
 
-  <div id="signedSection" class="section">
-    <h2>✅ เอกสาร "เซ็นแล้ว"</h2>
-    <div id="signedCount" class="count-box">กำลังโหลด...</div>
-    <table>
-      <thead>
-        <tr>
-          <th>เลขรับ</th>
-          <th>เรื่อง</th>
-          <th>ผู้เสนอ</th>
-          <th>ส่วน/ฝ่าย</th>
-          <th>บันทึกเมื่อ</th>
-        </tr>
-      </thead>
-      <tbody id="signedBody"></tbody>
-    </table>
-  </div>
+  <!-- ✅ เซ็นแล้ว -->
+  <h2>📁 เอกสาร "เซ็นแล้ว" — ทั้งหมด <span id="signedCount">0</span> เรื่อง</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>เลขรับ</th>
+        <th>เรื่อง</th>
+        <th>ผู้เสนอ</th>
+        <th>ส่วน/ฝ่าย</th>
+        <th>บันทึกเมื่อ</th>
+      </tr>
+    </thead>
+    <tbody id="signedBody">
+      <tr><td colspan="5" style="text-align:center;color:#666;">กำลังโหลด...</td></tr>
+    </tbody>
+  </table>
 
-  <div id="pendingSection" class="section">
-    <h2>🕘 เอกสาร "รอเซ็น"</h2>
-    <div id="pendingCount" class="count-box">กำลังโหลด...</div>
-    <table>
-      <thead>
-        <tr>
-          <th>เลขรับ</th>
-          <th>เรื่อง</th>
-          <th>ผู้เสนอ</th>
-          <th>ส่วน/ฝ่าย</th>
-          <th>บันทึกเมื่อ</th>
-        </tr>
-      </thead>
-      <tbody id="pendingBody"></tbody>
-    </table>
-  </div>
+  <!-- ✅ รอเซ็น -->
+  <h2>⏳ เอกสาร "รอเซ็น" — ทั้งหมด <span id="pendingCount">0</span> เรื่อง</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>เลขรับ</th>
+        <th>เรื่อง</th>
+        <th>ผู้เสนอ</th>
+        <th>ส่วน/ฝ่าย</th>
+        <th>บันทึกเมื่อ</th>
+      </tr>
+    </thead>
+    <tbody id="pendingBody">
+      <tr><td colspan="5" style="text-align:center;color:#666;">กำลังโหลด...</td></tr>
+    </tbody>
+  </table>
 
 </main>
-<!-- =====================  PART 2 : JavaScript  ===================== -->
+
+
+
+<!-- ✅ Firebase + Script -->
 <script type="module">
-/* ===== Firebase Config ===== */
+import {
+  initializeApp
+} from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
+
+import {
+  getFirestore, collection, query, orderBy, getDocs
+} from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
+
+/* ✅ Firebase config */
 const firebaseConfig = {
   apiKey: "AIzaSyDAYnOCUm4-QKlJGCLOGEGHsUf143K2swc",
   authDomain: "doc-receive-v3.firebaseapp.com",
@@ -154,131 +145,85 @@ const firebaseConfig = {
   appId: "1:105318430473:web:0023244038de907be685d8"
 };
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
-import {
-  getFirestore, collection, getDocs, query, orderBy
-} from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
-
-/* ===== Firebase Init ===== */
 const app = initializeApp(firebaseConfig);
 const db  = getFirestore(app);
 const docsCol = collection(db, "incoming_docs_real");
 
-/* ===== Helper ===== */
-function pad(n){ return String(n).padStart(2,"0"); }
-
-function setDefaultDateToday(){
-  const el = document.getElementById("filterDate");
-  const d  = new Date();
-  el.value = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+/* ✅ ดึงวันนี้ (yyyy-mm-dd) */
+function getTodayStr(){
+  return new Date().toISOString().slice(0,10);
 }
 
-function getSelectedDateRange(){
-  const el = document.getElementById("filterDate");
-  let val = el.value;
-  if(!val){
-    const d = new Date();
-    val = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
-  }
-  const start = new Date(`${val}T00:00:00`);
-  const end   = new Date(`${val}T23:59:59.999`);
-  return { start, end };
-}
+/* ✅ โหลดข้อมูล */
+async function loadData(dateStr){
+  document.getElementById("signedBody").innerHTML =
+    `<tr><td colspan="5" style="text-align:center;color:#777;">กำลังโหลด...</td></tr>`;
+  document.getElementById("pendingBody").innerHTML =
+    `<tr><td colspan="5" style="text-align:center;color:#777;">กำลังโหลด...</td></tr>`;
 
-function fmt(d){
-  return d.toLocaleString("th-TH", { dateStyle:"short", timeStyle:"medium" });
-}
+  const q = query(docsCol, orderBy("createdAt","desc"));
+  const snap = await getDocs(q);
 
-function render(tbody, rows){
-  if(!rows.length){
-    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#888">— ไม่มีข้อมูล —</td></tr>`;
-    return;
-  }
-  let html="";
-  rows.forEach(r=>{
-    html += `
-      <tr>
-        <td>${r.refno}</td>
-        <td>${r.subject}</td>
-        <td>${r.from}</td>
-        <td>${r.department}</td>
-        <td>${r.createdText}</td>
-      </tr>`;
+  let signed = [];
+  let pending = [];
+
+  snap.forEach(docSnap=>{
+    const d = docSnap.data();
+
+    if(d.date === dateStr){
+      if(d.status === "เซ็นแล้ว") signed.push(d);
+      if(d.status === "รอเซ็น") pending.push(d);
+    }
   });
-  tbody.innerHTML = html;
+
+  /* ✅ เซ็นแล้ว */
+  if(signed.length==0){
+    document.getElementById("signedBody").innerHTML =
+      `<tr><td colspan="5" style="text-align:center;color:#777;">ไม่มีข้อมูล</td></tr>`;
+  }else{
+    document.getElementById("signedBody").innerHTML =
+      signed.map(d=>`
+        <tr>
+          <td>${d.refno}</td>
+          <td>${d.subject}</td>
+          <td>${d.from}</td>
+          <td>${d.department ?? "-"}</td>
+          <td>${d.createdAt?.toDate().toLocaleString("th-TH") ?? "-"}</td>
+        </tr>
+      `).join("");
+  }
+
+  /* ✅ รอเซ็น */
+  if(pending.length==0){
+    document.getElementById("pendingBody").innerHTML =
+      `<tr><td colspan="5" style="text-align:center;color:#777;">ไม่มีข้อมูล</td></tr>`;
+  }else{
+    document.getElementById("pendingBody").innerHTML =
+      pending.map(d=>`
+        <tr>
+          <td>${d.refno}</td>
+          <td>${d.subject}</td>
+          <td>${d.from}</td>
+          <td>${d.department ?? "-"}</td>
+          <td>${d.createdAt?.toDate().toLocaleString("th-TH") ?? "-"}</td>
+        </tr>
+      `).join("");
+  }
+
+  document.getElementById("signedCount").innerText  = signed.length;
+  document.getElementById("pendingCount").innerText = pending.length;
 }
 
-/* ===== MAIN LOAD ===== */
-async function loadData(){
-  const signedBody  = document.getElementById("signedBody");
-  const pendingBody = document.getElementById("pendingBody");
+/* ✅ โหลดข้อมูลวันนี้อัตโนมัติ */
+const today = getTodayStr();
+document.getElementById("datePicker").value = today;
+loadData(today);
 
-  const signedCount  = document.getElementById("signedCount");
-  const pendingCount = document.getElementById("pendingCount");
-
-  signedBody.innerHTML = "";
-  pendingBody.innerHTML = "";
-  signedCount.textContent  = "กำลังโหลด...";
-  pendingCount.textContent = "กำลังโหลด...";
-
-  const { start, end } = getSelectedDateRange();
-
-  try{
-    const snap = await getDocs(query(docsCol, orderBy("createdAt","desc")));
-
-    const signedRows  = [];
-    const pendingRows = [];
-
-    snap.forEach(docSnap=>{
-      const d = docSnap.data();
-      const ts = d.createdAt?.toDate?.();
-      if(!ts) return;
-      if(ts < start || ts > end) return;
-
-      const row = {
-        refno   : d.refno ?? "-",
-        subject : d.subject ?? "-",
-        from    : d.from ?? "-",
-        department: d.department ?? "-",
-        createdText: fmt(ts),
-        status: d.status ?? "-"
-      };
-
-      if(row.status === "เซ็นแล้ว") signedRows.push(row);
-      else if(row.status === "รอเซ็น") pendingRows.push(row);
-    });
-
-    render(signedBody, signedRows);
-    render(pendingBody, pendingRows);
-
-    signedCount.textContent  = `เซ็นแล้ว: ${signedRows.length} เรื่อง`;
-    pendingCount.textContent = `รอเซ็น: ${pendingRows.length} เรื่อง`;
-
-  }catch(e){
-    console.error(e);
-    signedCount.textContent  = "โหลดข้อมูลผิดพลาด";
-    pendingCount.textContent = "โหลดข้อมูลผิดพลาด";
-  }
-}
-
-/* ===== EVENT ===== */
-document.getElementById("loadBtn").addEventListener("click", ()=>{
-  loadData();
-});
-
-document.getElementById("filterDate").addEventListener("change", ()=>{
-  loadData();
-});
-
-document.getElementById("filterDate").addEventListener("keydown",(e)=>{
-  if(e.key === "Enter"){
-    e.preventDefault();
-    loadData();
-  }
-});
-
-/* ===== RUN FIRST ===== */
-setDefaultDateToday();
-loadData();
-
+/* ✅ ปุ่มแสดงย้อนหลัง */
+document.getElementById("showBtn").onclick = ()=>{
+  loadData(document.getElementById("datePicker").value || getTodayStr());
+};
 </script>
+
+</body>
+</html>
