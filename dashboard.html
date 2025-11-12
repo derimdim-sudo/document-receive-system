@@ -144,7 +144,7 @@
 </main>
 <!-- =====================  PART 2 : JavaScript  ===================== -->
 <script type="module">
-/* ===== Firebase Config (เหมือนหน้า index.html) ===== */
+/* ===== Firebase Config ===== */
 const firebaseConfig = {
   apiKey: "AIzaSyDAYnOCUm4-QKlJGCLOGEGHsUf143K2swc",
   authDomain: "doc-receive-v3.firebaseapp.com",
@@ -159,76 +159,71 @@ import {
   getFirestore, collection, getDocs, query, orderBy
 } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
 
-/* ===== Init ===== */
+/* ===== Firebase Init ===== */
 const app = initializeApp(firebaseConfig);
 const db  = getFirestore(app);
 const docsCol = collection(db, "incoming_docs_real");
 
-/* ===== Helpers ===== */
-function pad(n){ return String(n).padStart(2, "0"); }
+/* ===== Helper ===== */
+function pad(n){ return String(n).padStart(2,"0"); }
 
-function setDefaultDateToday() {
+function setDefaultDateToday(){
   const el = document.getElementById("filterDate");
-  const now = new Date();
-  const yyyy = now.getFullYear();
-  const mm = pad(now.getMonth()+1);
-  const dd = pad(now.getDate());
-  el.value = `${yyyy}-${mm}-${dd}`;
+  const d  = new Date();
+  el.value = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
 }
 
-function getSelectedDateRange() {
+function getSelectedDateRange(){
   const el = document.getElementById("filterDate");
   let val = el.value;
   if(!val){
-    const now = new Date();
-    val = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
+    const d = new Date();
+    val = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
   }
-  // ช่วงเวลา 00:00:00.000 – 23:59:59.999 ของวันที่เลือก (ตามเวลาเครื่อง)
   const start = new Date(`${val}T00:00:00`);
   const end   = new Date(`${val}T23:59:59.999`);
   return { start, end };
 }
 
-function fmtDateTimeTH(d){
-  try{
-    return d.toLocaleString("th-TH", { dateStyle: "short", timeStyle: "medium" });
-  }catch(_){
-    return d.toLocaleString("th-TH");
-  }
+function fmt(d){
+  return d.toLocaleString("th-TH", { dateStyle:"short", timeStyle:"medium" });
 }
 
-function renderTable(tbodyId, rows){
-  const tbody = document.getElementById(tbodyId);
+function render(tbody, rows){
   if(!rows.length){
-    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#6c757d">— ไม่มีข้อมูล —</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:#888">— ไม่มีข้อมูล —</td></tr>`;
     return;
   }
-  let html = "";
+  let html="";
   rows.forEach(r=>{
     html += `
       <tr>
         <td>${r.refno}</td>
         <td>${r.subject}</td>
         <td>${r.from}</td>
-        <td>${r.department ?? "-"}</td>
+        <td>${r.department}</td>
         <td>${r.createdText}</td>
       </tr>`;
   });
   tbody.innerHTML = html;
 }
 
-/* ===== Core Loader ===== */
+/* ===== MAIN LOAD ===== */
 async function loadData(){
-  // UI loading
-  document.getElementById("signedCount").textContent  = "กำลังโหลด...";
-  document.getElementById("pendingCount").textContent = "กำลังโหลด...";
-  document.getElementById("signedBody").innerHTML  = "";
-  document.getElementById("pendingBody").innerHTML = "";
+  const signedBody  = document.getElementById("signedBody");
+  const pendingBody = document.getElementById("pendingBody");
+
+  const signedCount  = document.getElementById("signedCount");
+  const pendingCount = document.getElementById("pendingCount");
+
+  signedBody.innerHTML = "";
+  pendingBody.innerHTML = "";
+  signedCount.textContent  = "กำลังโหลด...";
+  pendingCount.textContent = "กำลังโหลด...";
 
   const { start, end } = getSelectedDateRange();
 
   try{
-    // ดึงเอกสารทั้งหมดเรียงตามเวลา (ทำ client-side filter เพื่อลดปัญหา index)
     const snap = await getDocs(query(docsCol, orderBy("createdAt","desc")));
 
     const signedRows  = [];
@@ -236,55 +231,54 @@ async function loadData(){
 
     snap.forEach(docSnap=>{
       const d = docSnap.data();
-      const ts = d.createdAt?.toDate ? d.createdAt.toDate() : null;
-      if(!ts) return; // ยังไม่มีเวลา (timestamp) ข้าม
-
-      // filter เฉพาะช่วงวันที่เลือก
+      const ts = d.createdAt?.toDate?.();
+      if(!ts) return;
       if(ts < start || ts > end) return;
 
       const row = {
-        refno: d.refno ?? "-",
-        subject: d.subject ?? "-",
-        from: d.from ?? "-",
+        refno   : d.refno ?? "-",
+        subject : d.subject ?? "-",
+        from    : d.from ?? "-",
         department: d.department ?? "-",
-        createdText: fmtDateTimeTH(ts),
+        createdText: fmt(ts),
+        status: d.status ?? "-"
       };
 
-      if(d.status === "เซ็นแล้ว"){
-        signedRows.push(row);
-      }else if(d.status === "รอเซ็น"){
-        pendingRows.push(row);
-      }
+      if(row.status === "เซ็นแล้ว") signedRows.push(row);
+      else if(row.status === "รอเซ็น") pendingRows.push(row);
     });
 
-    // สรุปผล
-    document.getElementById("signedCount").textContent  =
-      `วันนี้มีเอกสารที่ "เซ็นแล้ว" ทั้งหมด: ${signedRows.length} เรื่อง`;
-    document.getElementById("pendingCount").textContent =
-      `วันนี้มีเอกสารที่ "รอเซ็น" ทั้งหมด: ${pendingRows.length} เรื่อง`;
+    render(signedBody, signedRows);
+    render(pendingBody, pendingRows);
 
-    renderTable("signedBody",  signedRows);
-    renderTable("pendingBody", pendingRows);
+    signedCount.textContent  = `เซ็นแล้ว: ${signedRows.length} เรื่อง`;
+    pendingCount.textContent = `รอเซ็น: ${pendingRows.length} เรื่อง`;
 
   }catch(e){
     console.error(e);
-    document.getElementById("signedCount").textContent  = "เกิดข้อผิดพลาดในการโหลดข้อมูล";
-    document.getElementById("pendingCount").textContent = "เกิดข้อผิดพลาดในการโหลดข้อมูล";
+    signedCount.textContent  = "โหลดข้อมูลผิดพลาด";
+    pendingCount.textContent = "โหลดข้อมูลผิดพลาด";
   }
 }
 
-/* ===== Boot ===== */
-setDefaultDateToday();
-loadData();
+/* ===== EVENT ===== */
+document.getElementById("loadBtn").addEventListener("click", ()=>{
+  loadData();
+});
 
-// เปิดปุ่ม Enter ที่ช่อง date ให้โหลดซ้ำได้
+document.getElementById("filterDate").addEventListener("change", ()=>{
+  loadData();
+});
+
 document.getElementById("filterDate").addEventListener("keydown",(e)=>{
   if(e.key === "Enter"){
     e.preventDefault();
     loadData();
   }
 });
+
+/* ===== RUN FIRST ===== */
+setDefaultDateToday();
+loadData();
+
 </script>
-<!-- ===================  END PART 2  =================== -->
-</body>
-</html>
