@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
 <title>📊 Dashboard — ระบบรับหนังสือเสนอผู้อำนวยการ</title>
 
 <!-- ✅ Favicon -->
@@ -10,65 +10,98 @@
 
 <style>
   body {
-    font-family: "Prompt","sans-serif";
+    font-family: "Prompt", sans-serif;
     background: #e9f2ff;
     margin: 0;
+    -webkit-text-size-adjust: 100%;
   }
   header {
     background: #0d6efd;
     color: #fff;
-    padding: 18px;
-    font-size: 22px;
+    padding: 16px;
+    font-size: 20px;
     font-weight: 600;
     text-align: center;
   }
+
   main {
     max-width: 1100px;
-    margin: 18px auto;
+    margin: 16px auto;
     background: #fff;
-    padding: 22px;
+    padding: 20px;
     border-radius: 12px;
     box-shadow: 0 4px 18px rgba(0,0,0,.08);
   }
+
   h2 {
     margin-top: 28px;
     background: #eef7ff;
-    padding: 12px;
+    padding: 10px;
     border-left: 5px solid #0d6efd;
+    font-size: 18px;
+  }
+
+  /* ✅ ปรับปุ่ม + input ให้เหมาะกับมือถือ */
+  #datePicker {
+    padding: 8px;
+    font-size: 16px;
+    margin-right: 8px;
+    border-radius: 6px;
+    border: 1px solid #cfcfcf;
+  }
+
+  button {
+    padding: 9px 14px;
+    background: #0d6efd;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 15px;
+  }
+  button:hover {
+    background: #0a58ca;
+  }
+
+  /* ✅ ตาราง ให้ scroll ได้ในมือถือ */
+  .table-wrap {
+    width: 100%;
+    overflow-x: auto;
   }
   table {
     width: 100%;
     border-collapse: collapse;
-    margin-bottom: 20px;
+    margin-bottom: 16px;
+    min-width: 650px;
   }
   th, td {
     border-bottom: 1px solid #ddd;
     padding: 8px;
     text-align: left;
     font-size: 14px;
+    white-space: nowrap;
   }
   th {
     background: #e8f2ff;
   }
-  .tag {
-    background: #0d6efd;
-    color: #fff;
-    padding: 6px 12px;
-    border-radius: 6px;
-    font-size: 14px;
-    display: inline-block;
-    margin-top: 12px;
-  }
-  button {
-    padding: 8px 14px;
-    background: #0d6efd;
-    color: #fff;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-  }
-  button:hover {
-    background: #0a58ca;
+
+  @media (max-width: 600px) {
+    header {
+      font-size: 17px;
+      padding: 14px;
+    }
+    h2 {
+      font-size: 16px;
+      padding: 8px;
+    }
+    #datePicker {
+      width: 100%;
+      margin: 0 0 10px 0;
+    }
+    button {
+      width: 100%;
+      font-size: 16px;
+    }
   }
 </style>
 </head>
@@ -81,51 +114,53 @@
 <main>
 
   <!-- ✅ เลือกวันที่ -->
-  <div style="margin-bottom:18px;">
+  <div style="margin-bottom:16px;">
     <label>เลือกวันที่: </label>
+    <br class="mobile-only">
     <input type="date" id="datePicker">
     <button id="showBtn">แสดงข้อมูล</button>
   </div>
 
   <!-- ✅ เซ็นแล้ว -->
-  <h2>📁 เอกสาร "เซ็นแล้ว" — ทั้งหมด <span id="signedCount">0</span> เรื่อง</h2>
-  <table>
-    <thead>
-      <tr>
-        <th>เลขรับ</th>
-        <th>เรื่อง</th>
-        <th>ผู้เสนอ</th>
-        <th>ส่วน/ฝ่าย</th>
-        <th>บันทึกเมื่อ</th>
-      </tr>
-    </thead>
-    <tbody id="signedBody">
-      <tr><td colspan="5" style="text-align:center;color:#666;">กำลังโหลด...</td></tr>
-    </tbody>
-  </table>
+  <h2>✅ เอกสาร "เซ็นแล้ว" — <span id="signedCount">0</span> เรื่อง</h2>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>เลขรับ</th>
+          <th>เรื่อง</th>
+          <th>ผู้เสนอ</th>
+          <th>ส่วน/ฝ่าย</th>
+          <th>บันทึกเมื่อ</th>
+        </tr>
+      </thead>
+      <tbody id="signedBody">
+        <tr><td colspan="5" style="text-align:center;color:#777;">กำลังโหลด...</td></tr>
+      </tbody>
+    </table>
+  </div>
 
   <!-- ✅ รอเซ็น -->
-  <h2>⏳ เอกสาร "รอเซ็น" — ทั้งหมด <span id="pendingCount">0</span> เรื่อง</h2>
-  <table>
-    <thead>
-      <tr>
-        <th>เลขรับ</th>
-        <th>เรื่อง</th>
-        <th>ผู้เสนอ</th>
-        <th>ส่วน/ฝ่าย</th>
-        <th>บันทึกเมื่อ</th>
-      </tr>
-    </thead>
-    <tbody id="pendingBody">
-      <tr><td colspan="5" style="text-align:center;color:#666;">กำลังโหลด...</td></tr>
-    </tbody>
-  </table>
+  <h2>⏳ เอกสาร "รอเซ็น" — <span id="pendingCount">0</span> เรื่อง</h2>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>เลขรับ</th>
+          <th>เรื่อง</th>
+          <th>ผู้เสนอ</th>
+          <th>ส่วน/ฝ่าย</th>
+          <th>บันทึกเมื่อ</th>
+        </tr>
+      </thead>
+      <tbody id="pendingBody">
+        <tr><td colspan="5" style="text-align:center;color:#777;">กำลังโหลด...</td></tr>
+      </tbody>
+    </table>
+  </div>
 
 </main>
 
-
-
-<!-- ✅ Firebase + Script -->
 <script type="module">
 import {
   initializeApp
@@ -149,12 +184,10 @@ const app = initializeApp(firebaseConfig);
 const db  = getFirestore(app);
 const docsCol = collection(db, "incoming_docs_real");
 
-/* ✅ ดึงวันนี้ (yyyy-mm-dd) */
 function getTodayStr(){
   return new Date().toISOString().slice(0,10);
 }
 
-/* ✅ โหลดข้อมูล */
 async function loadData(dateStr){
   document.getElementById("signedBody").innerHTML =
     `<tr><td colspan="5" style="text-align:center;color:#777;">กำลังโหลด...</td></tr>`;
@@ -169,7 +202,6 @@ async function loadData(dateStr){
 
   snap.forEach(docSnap=>{
     const d = docSnap.data();
-
     if(d.date === dateStr){
       if(d.status === "เซ็นแล้ว") signed.push(d);
       if(d.status === "รอเซ็น") pending.push(d);
@@ -177,49 +209,41 @@ async function loadData(dateStr){
   });
 
   /* ✅ เซ็นแล้ว */
-  if(signed.length==0){
-    document.getElementById("signedBody").innerHTML =
-      `<tr><td colspan="5" style="text-align:center;color:#777;">ไม่มีข้อมูล</td></tr>`;
-  }else{
-    document.getElementById("signedBody").innerHTML =
-      signed.map(d=>`
-        <tr>
-          <td>${d.refno}</td>
-          <td>${d.subject}</td>
-          <td>${d.from}</td>
-          <td>${d.department ?? "-"}</td>
-          <td>${d.createdAt?.toDate().toLocaleString("th-TH") ?? "-"}</td>
-        </tr>
-      `).join("");
-  }
+  document.getElementById("signedCount").innerText  = signed.length;
+  document.getElementById("signedBody").innerHTML =
+    signed.length ? 
+    signed.map(d=>`
+      <tr>
+        <td>${d.refno}</td>
+        <td>${d.subject}</td>
+        <td>${d.from}</td>
+        <td>${d.department ?? "-"}</td>
+        <td>${d.createdAt?.toDate().toLocaleString("th-TH") ?? "-"}</td>
+      </tr>
+    `).join("") :
+    `<tr><td colspan="5" style="text-align:center;color:#777;">ไม่มีข้อมูล</td></tr>`;
 
   /* ✅ รอเซ็น */
-  if(pending.length==0){
-    document.getElementById("pendingBody").innerHTML =
-      `<tr><td colspan="5" style="text-align:center;color:#777;">ไม่มีข้อมูล</td></tr>`;
-  }else{
-    document.getElementById("pendingBody").innerHTML =
-      pending.map(d=>`
-        <tr>
-          <td>${d.refno}</td>
-          <td>${d.subject}</td>
-          <td>${d.from}</td>
-          <td>${d.department ?? "-"}</td>
-          <td>${d.createdAt?.toDate().toLocaleString("th-TH") ?? "-"}</td>
-        </tr>
-      `).join("");
-  }
-
-  document.getElementById("signedCount").innerText  = signed.length;
   document.getElementById("pendingCount").innerText = pending.length;
+  document.getElementById("pendingBody").innerHTML =
+    pending.length ? 
+    pending.map(d=>`
+      <tr>
+        <td>${d.refno}</td>
+        <td>${d.subject}</td>
+        <td>${d.from}</td>
+        <td>${d.department ?? "-"}</td>
+        <td>${d.createdAt?.toDate().toLocaleString("th-TH") ?? "-"}</td>
+      </tr>
+    `).join("") :
+    `<tr><td colspan="5" style="text-align:center;color:#777;">ไม่มีข้อมูล</td></tr>`;
 }
 
-/* ✅ โหลดข้อมูลวันนี้อัตโนมัติ */
-const today = getTodayStr();
-document.getElementById("datePicker").value = today;
-loadData(today);
+/* ✅ โหลดวันนี้ */
+document.getElementById("datePicker").value = getTodayStr();
+loadData(getTodayStr());
 
-/* ✅ ปุ่มแสดงย้อนหลัง */
+/* ✅ แสดงย้อนหลัง */
 document.getElementById("showBtn").onclick = ()=>{
   loadData(document.getElementById("datePicker").value || getTodayStr());
 };
