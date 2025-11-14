@@ -5,9 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>ระบบรับหนังสือเสนอผู้อำนวยการ – Version 3</title>
 
-<link rel="icon" type="image/png" href="favicon.png">
-
-
 <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet" />
 
 <style>
@@ -32,6 +29,13 @@
     border-radius:10px;
     border:1px solid #ddd;
     margin-top:18px;
+  }
+
+  /* Mobile responsive */
+  @media(max-width:768px){
+    .row {grid-template-columns:1fr;}
+    main {margin:10px;padding:18px;}
+    header {font-size:18px;padding:14px;}
   }
 </style>
 </head>
@@ -74,23 +78,6 @@
       </div>
     </div>
 
-    <div class="row">
-      <div>
-        <label>ผู้เสนอ</label>
-        <input type="text" id="from" />
-      </div>
-
-      <div>
-        <label>ชั้นความลับ</label>
-        <select id="secret">
-          <option value="ไม่มี">🔒 ไม่มี</option>
-          <option value="ลับ">🔒 ลับ</option>
-          <option value="ลับมาก">🔒🔒 ลับมาก</option>
-          <option value="ลับที่สุด">🔒🔒🔒 ลับที่สุด</option>
-        </select>
-      </div>
-    </div>
-
     <label>ส่วน/ฝ่าย</label>
     <select id="department">
       <option value="">— เลือกส่วน/ฝ่าย —</option>
@@ -100,7 +87,7 @@
       <option>ส่วนสวัสดิการและสงเคราะห์ผู้ต้องขัง</option>
       <option>ส่วนพัฒนาผู้ต้องขัง 1</option>
       <option>ส่วนพัฒนาผู้ต้องขัง 2</option>
-      <option>ส่วนสถานพยาบาล</option>   <!-- ✅ เพิ่ม -->
+      <option>ส่วนสถานพยาบาล</option>
       <option>ฝ่ายบริหาร</option>
     </select>
 
@@ -116,7 +103,7 @@
 
 
   <input type="text" id="searchBox"
-    placeholder="🔎 ค้นหา (เลขรับ / เรื่อง / ผู้เสนอ / ส่วน/ฝ่าย)"
+    placeholder="🔎 ค้นหา (เลขรับ / เรื่อง / ส่วน/ฝ่าย / หมายเหตุ)"
     style="width:100%;margin-top:18px"
   />
 
@@ -135,9 +122,10 @@
       <option>ส่วนสวัสดิการและสงเคราะห์ผู้ต้องขัง</option>
       <option>ส่วนพัฒนาผู้ต้องขัง 1</option>
       <option>ส่วนพัฒนาผู้ต้องขัง 2</option>
-      <option>ส่วนสถานพยาบาล</option>   <!-- ✅ เพิ่ม -->
+      <option>ส่วนสถานพยาบาล</option>
       <option>ฝ่ายบริหาร</option>
     </select>
+
   </div>
 
   <div class="table-wrapper">
@@ -151,7 +139,6 @@
           <th>เรื่อง</th>
           <th>ความด่วน</th>
           <th>ชั้นความลับ</th>
-          <th>ผู้เสนอ</th>
           <th>หมายเหตุ</th>
           <th>สถานะ</th>
           <th>บันทึกเมื่อ</th>
@@ -163,9 +150,14 @@
   </div>
 
   <button id="exportBtn" style="margin-top:16px">📤 Export Excel</button>
+
+</main>
+
 <script type="module">
 
-/* ✅ Firebase Config */
+/* ============================
+   Firebase Config
+============================ */
 const firebaseConfig = {
   apiKey: "AIzaSyDAYnOCUm4-QKlJGCLOGEGHsUf143K2swc",
   authDomain: "doc-receive-v3.firebaseapp.com",
@@ -188,7 +180,7 @@ const app = initializeApp(firebaseConfig);
 const db  = getFirestore(app);
 const docsCol = collection(db, "incoming_docs_real");
 
-/* ✅ Running Number (transaction) — SAFE */
+/* Running Number */
 async function generateRefNo(){
   const yearTH = new Date().getFullYear() + 543;
   const counterRef = doc(db, "incoming_meta", "refCounter");
@@ -213,7 +205,7 @@ async function generateRefNo(){
   });
 }
 
-/* ✅ reset form */
+/* Reset form */
 function resetForm(){
   document.getElementById("docForm").reset();
   const now = new Date();
@@ -221,26 +213,25 @@ function resetForm(){
   document.getElementById("time").value = now.toTimeString().slice(0,5);
 }
 
-/* ✅ Save */
+/* Save */
 document.getElementById("saveBtn").onclick = async ()=>{
   const date = document.getElementById("date").value;
   const time = document.getElementById("time").value;
   const subject = document.getElementById("subject").value.trim();
-  const from = document.getElementById("from").value.trim();
   const department = document.getElementById("department").value;
   const urgency = document.getElementById("urgency").value;
-  const secret  = document.getElementById("secret").value;
+  const secret  = document.getElementById("secret")?.value || "ไม่มี";
   const note    = document.getElementById("note").value.trim();
 
-  if(!date || !time || !subject || !from){
-    alert("กรุณากรอก วันที่ / เวลา / เรื่อง / ผู้เสนอ");
+  if(!date || !time || !subject){
+    alert("กรุณากรอก วันที่ / เวลา / เรื่อง");
     return;
   }
 
   try{
     const refno = await generateRefNo();
     const docRef = await addDoc(docsCol,{
-      refno, date, time, subject, urgency, secret, from,
+      refno, date, time, subject, urgency, secret,
       department, note,
       status:"รอเสนอ",
       createdAt: serverTimestamp(),
@@ -259,7 +250,7 @@ document.getElementById("saveBtn").onclick = async ()=>{
   }
 };
 
-/* ✅ update status */
+/* Update status */
 window.changeStatus = async (id,newStatus)=>{
   try{
     const ref = doc(db,"incoming_docs_real",id);
@@ -267,16 +258,16 @@ window.changeStatus = async (id,newStatus)=>{
       status:newStatus,
       statusHistory: arrayUnion({status:newStatus,updatedAt:Timestamp.now()})
     });
-    alert("✅ อัปเดตแล้ว");
+    alert("อัปเดตแล้ว");
   }catch(e){
-    alert("❌ อัปเดตไม่สำเร็จ");
+    alert("อัปเดตไม่สำเร็จ");
   }
 };
 
 let currentFilterStatus="ทั้งหมด";
 let currentFilterDept="";
 
-/* ✅ LOAD DATA */
+/* Load Data */
 function loadData(){
   const q = query(docsCol, orderBy("createdAt","desc"));
   onSnapshot(q,(snap)=>{
@@ -289,7 +280,7 @@ function loadData(){
       if(currentFilterStatus!=="ทั้งหมด" && d.status!==currentFilterStatus) return;
       if(currentFilterDept && d.department!==currentFilterDept) return;
 
-      const allText = `${d.refno} ${d.subject} ${d.from} ${d.note} ${d.department}`.toLowerCase();
+      const allText = `${d.refno} ${d.subject} ${d.department} ${d.note}`.toLowerCase();
       if(keyword && !allText.includes(keyword)) return;
 
       html += `
@@ -301,7 +292,6 @@ function loadData(){
         <td>${d.subject}</td>
         <td>${d.urgency}</td>
         <td>${d.secret}</td>
-        <td>${d.from}</td>
         <td>${d.note}</td>
         <td>${d.status}</td>
         <td>${d.createdAt?.toDate? d.createdAt.toDate().toLocaleString("th-TH"):"-"}</td>
@@ -314,15 +304,15 @@ function loadData(){
             <option value="ส่งคืนแก้ไข">ส่งคืนแก้ไข</option>
           </select>
         </td>
-      </tr>`;
+      </tr>
+      `;
     });
-
     document.querySelector("#docTable tbody").innerHTML = html;
   });
 }
 loadData();
 
-/* ✅ Filter event */
+/* Filters */
 document.getElementById("filterAll").onclick    = ()=>{currentFilterStatus="ทั้งหมด";loadData();};
 document.getElementById("filterWait").onclick   = ()=>{currentFilterStatus="รอเสนอ";loadData();};
 document.getElementById("filterPending").onclick= ()=>{currentFilterStatus="รอเซ็น";loadData();};
@@ -336,7 +326,7 @@ document.getElementById("filterDept").onchange = (e)=>{
 
 document.getElementById("searchBox").oninput = ()=> loadData();
 
-/* ✅ EXPORT */
+/* Export Excel */
 document.getElementById("exportBtn").onclick = async ()=>{
   const snap = await getDocs(query(docsCol, orderBy("createdAt","desc")));
   let rows=[];
@@ -354,9 +344,9 @@ document.getElementById("exportBtn").onclick = async ()=>{
       เวลา:d.time,
       ส่วนฝ่าย: d.department??"-",
       เรื่อง:d.subject,
-      ผู้เสนอ:d.from,
       ความด่วน:d.urgency,
       ชั้นความลับ:d.secret,
+      หมายเหตุ:d.note,
       สถานะ:d.status,
       ประวัติสถานะ:history,
       บันทึกเมื่อ:d.createdAt?.toDate?.().toLocaleString("th-TH")??"-"
@@ -366,7 +356,7 @@ document.getElementById("exportBtn").onclick = async ()=>{
   let ws=XLSX.utils.json_to_sheet(rows);
   XLSX.utils.book_append_sheet(wb,ws,"incoming_docs_real");
   XLSX.writeFile(wb,"incoming_docs_real.xlsx");
-  alert("✅ Export สำเร็จ");
+  alert("Export สำเร็จ");
 };
 
 resetForm();
