@@ -31,7 +31,6 @@
     margin-top:18px;
   }
 
-  /* Mobile responsive */
   @media(max-width:768px){
     .row {grid-template-columns:1fr;}
     main {margin:10px;padding:18px;}
@@ -102,12 +101,19 @@
   </form>
 
 
+  <!-- ค้นหา -->
   <input type="text" id="searchBox"
     placeholder="🔎 ค้นหา (เลขรับ / เรื่อง / ส่วน/ฝ่าย / หมายเหตุ)"
     style="width:100%;margin-top:18px"
   />
 
+  <!-- Filter buttons + date search -->
   <div class="filter-row">
+
+    <!-- 🔵 เพิ่มปุ่มค้นหาวันที่ -->
+    <input type="date" id="filterDate" style="padding:8px;border:1px solid #ccc;border-radius:8px;">
+    <button id="filterByDateBtn">ค้นหาวันที่</button>
+
     <button id="filterAll">ทั้งหมด</button>
     <button id="filterWait">รอเสนอ</button>
     <button id="filterPending">รอเซ็น</button>
@@ -153,11 +159,10 @@
 
 </main>
 
+
 <script type="module">
 
-/* ============================
-   Firebase Config
-============================ */
+/* Firebase */
 const firebaseConfig = {
   apiKey: "AIzaSyDAYnOCUm4-QKlJGCLOGEGHsUf143K2swc",
   authDomain: "doc-receive-v3.firebaseapp.com",
@@ -171,7 +176,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/fireba
 import {
   getFirestore, collection, addDoc, serverTimestamp, Timestamp,
   query, orderBy, onSnapshot, getDocs, updateDoc, doc,
-  arrayUnion, limit, runTransaction
+  arrayUnion, runTransaction
 } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore.js";
 
 import * as XLSX from "https://cdn.sheetjs.com/xlsx-latest/package/xlsx.mjs";
@@ -205,7 +210,7 @@ async function generateRefNo(){
   });
 }
 
-/* Reset form */
+/* Reset */
 function resetForm(){
   document.getElementById("docForm").reset();
   const now = new Date();
@@ -220,7 +225,7 @@ document.getElementById("saveBtn").onclick = async ()=>{
   const subject = document.getElementById("subject").value.trim();
   const department = document.getElementById("department").value;
   const urgency = document.getElementById("urgency").value;
-  const secret  = document.getElementById("secret")?.value || "ไม่มี";
+  const secret  = "ไม่มี";
   const note    = document.getElementById("note").value.trim();
 
   if(!date || !time || !subject){
@@ -242,11 +247,10 @@ document.getElementById("saveBtn").onclick = async ()=>{
       statusHistory: arrayUnion({status:"รอเสนอ",updatedAt:Timestamp.now()})
     });
 
-    alert("✅ บันทึกสำเร็จ");
+    alert("บันทึกสำเร็จ");
     resetForm();
   }catch(e){
-    console.error(e);
-    alert("❌ บันทึกไม่สำเร็จ");
+    alert("บันทึกไม่สำเร็จ");
   }
 };
 
@@ -258,7 +262,6 @@ window.changeStatus = async (id,newStatus)=>{
       status:newStatus,
       statusHistory: arrayUnion({status:newStatus,updatedAt:Timestamp.now()})
     });
-    alert("อัปเดตแล้ว");
   }catch(e){
     alert("อัปเดตไม่สำเร็จ");
   }
@@ -307,6 +310,7 @@ function loadData(){
       </tr>
       `;
     });
+
     document.querySelector("#docTable tbody").innerHTML = html;
   });
 }
@@ -326,7 +330,52 @@ document.getElementById("filterDept").onchange = (e)=>{
 
 document.getElementById("searchBox").oninput = ()=> loadData();
 
-/* Export Excel */
+/* 🔵 Filter by Date */
+document.getElementById("filterByDateBtn").onclick = () => {
+  const selected = document.getElementById("filterDate").value;
+  if(!selected){
+    alert("กรุณาเลือกวันที่ก่อน");
+    return;
+  }
+
+  const q = query(docsCol, orderBy("createdAt","desc"));
+  onSnapshot(q,(snap)=>{
+    let html="";
+
+    snap.forEach(docSnap=>{
+      const d = docSnap.data();
+      if(d.date !== selected) return;
+
+      html += `
+        <tr>
+          <td>${d.refno}</td>
+          <td>${d.date}</td>
+          <td>${d.time}</td>
+          <td>${d.department ?? "-"}</td>
+          <td>${d.subject}</td>
+          <td>${d.urgency}</td>
+          <td>${d.secret}</td>
+          <td>${d.note}</td>
+          <td>${d.status}</td>
+          <td>${d.createdAt?.toDate().toLocaleString("th-TH") ?? "-"}</td>
+          <td>
+            <select onchange="changeStatus('${docSnap.id}', this.value)">
+              <option value="">เลือก</option>
+              <option value="รอเสนอ">รอเสนอ</option>
+              <option value="รอเซ็น">รอเซ็น</option>
+              <option value="เซ็นแล้ว">เซ็นแล้ว</option>
+              <option value="ส่งคืนแก้ไข">ส่งคืนแก้ไข</option>
+            </select>
+          </td>
+        </tr>`;
+    });
+
+    document.querySelector("#docTable tbody").innerHTML =
+      html || `<tr><td colspan="11" style="text-align:center;">ไม่มีข้อมูล</td></tr>`;
+  });
+};
+
+/* Export */
 document.getElementById("exportBtn").onclick = async ()=>{
   const snap = await getDocs(query(docsCol, orderBy("createdAt","desc")));
   let rows=[];
